@@ -18,6 +18,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api/restaurant', require('./routes/restaurantRoutes'));
+app.use('/api/billing', require('./routes/billingRoutes'));
 
 // Global Error Handling Middleware
 app.use((err, req, res, next) => {
