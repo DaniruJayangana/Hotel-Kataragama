@@ -17,8 +17,9 @@ mongoose.connect(process.env.MONGODB_URI)
 // Mount Application API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
+app.use('/api/restaurant', require('./routes/restaurantRoutes'));
 
-// Global Error Handling Middleware (Catches bad JSON formatting, etc.)
+// Global Error Handling Middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ error: "Internal Server Error", details: err.message });
