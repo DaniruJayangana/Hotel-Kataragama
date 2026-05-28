@@ -1,46 +1,31 @@
-// 1. Load the secret environment variables at the very top
-require('dotenv').config();
-
 const express = require('express');
 const mongoose = require('mongoose');
-const Staff = require('./models/Staff');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const app = express();
+
+// Middleware to parse incoming JSON payloads
 app.use(express.json());
 
-// 2. Read the connection string securely from the hidden .env file
-const MONGODB_URI = process.env.MONGODB_URI;
+// Database Connection
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log("Database Connected Successfully"))
+    .catch((err) => console.log("Database Connection Error: ", err));
 
-mongoose.connect(MONGODB_URI)
-    .then(() => console.log("🚀 SUCCESS: Connected safely to the cloud database using secure credentials!"))
-    .catch((error) => console.error("❌ Database connection error: ", error));
+// Mount Application API Routes
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/bookings', require('./routes/bookingRoutes'));
 
-// A Route to add a new staff member to the database
-app.post('/api/staff', async (req, res) => {
-    try {
-        const newStaff = new Staff({
-            _id: req.body.staff_id,
-            role: req.body.role,
-            first_name: req.body.first_name,
-            last_name: req.body.last_name,
-            hire_date: req.body.hire_date,
-            department: req.body.department,
-            contact_number: req.body.contact_number,
-            salary: req.body.salary
-        });
-
-        const savedStaff = await newStaff.save();
-        res.status(201).json({ message: "Staff added successfully!", data: savedStaff });
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
+// Global Error Handling Middleware (Catches bad JSON formatting, etc.)
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: "Internal Server Error", details: err.message });
 });
 
-app.get('/', (req, res) => {
-    res.send("Hotel Management System Backend is running securely!");
-});
-
-const PORT = 3000;
+// Port Listener
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
