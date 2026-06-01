@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Kataragama - Room Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="js/auth.js"></script>
+<script>
+    // 1. Force authentication on page load
+    checkAuth();
+
+    // 2. Use secureFetch instead of standard fetch
+    async function loadData() {
+        const res = await secureFetch('/api/billing/dashboard');
+        const data = await res.json();
+        
+        // Handle standardized error
+        if (!res.ok) {
+            console.error("Error:", data.error);
+            return;
+        }
+        console.log("Data loaded:", data);
+    }
+</script>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans p-8">
+    <nav class="bg-slate-800 p-4 flex gap-6">
+    <a href="index.html" class="text-white hover:text-blue-400">Dashboard</a>
+    <a href="checkin.html" class="text-white hover:text-blue-400">Check-In</a>
+    <a href="billing.html" class="text-white hover:text-blue-400">Billing</a>
+    <button onclick="logout()" class="ml-auto text-red-400">Logout</button>
+</nav>
+
+    <header class="mb-8 border-b border-slate-700 pb-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight text-emerald-500">ROOM MANAGEMENT BOARD</h1>
+            <p class="text-slate-400 text-sm">Real-time Housekeeping & Availability Matrix</p>
+        </div>
+        <div class="flex gap-4">
+            <a href="kitchen.html" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-2 px-4 rounded-lg border border-slate-700 transition">
+                🍳 Kitchen View
+            </a>
+            <button onclick="fetchRooms()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                🔄 Refresh Rooms
+            </button>
+        </div>
+    </header>
+
+    <main id="rooms-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+        <p class="text-slate-400 col-span-4 text-center py-12">Loading hotel room matrix...</p>
+    </main>
+
+    <script>
+    async function fetchRooms() {
+        const gridContainer = document.getElementById('rooms-grid');
+        
+        try {
+            const response = await secureFetch('http://localhost:5000/api/bookings/rooms');
+            if (!response.ok) throw new Error("Backend offline");
+            
+            const rooms = await response.json();
+            gridContainer.innerHTML = '';
+
+            rooms.forEach(room => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl flex flex-col justify-between hover:border-slate-600 transition";
+                
+                // 1. Assign dynamic color styles based on status
+                let statusBadgeClass = "";
+                let actionButtonHTML = "";
+
+                if (room.status === "Available") {
+                    statusBadgeClass = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                    actionButtonHTML = `
+                        <a href="checkin.html" class="text-xs text-center bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-3 rounded-lg w-full transition">
+                            🔑 New Check-In
+                        </a>`;
+                } else if (room.status === "Cleaning") {
+                    statusBadgeClass = "bg-orange-500/10 text-orange-400 border-orange-500/20 animate-pulse";
+                    actionButtonHTML = `
+                        <button onclick="updateRoomStatus('${room._id}', 'Available')" class="text-xs bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-3 rounded-lg w-full transition">
+                            🧹 Mark Clean & Ready
+                        </button>`;
+                } else {
+                    // Booked state
+                    statusBadgeClass = "bg-blue-500/10 text-blue-400 border-blue-500/20";
+                    actionButtonHTML = `
+                        <button onclick="updateRoomStatus('${room._id}', 'Cleaning')" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2 px-3 rounded-lg w-full transition">
+                            🧾 Guest Checkout
+                        </button>`;
+                }
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-2xl font-black text-white tracking-tight">${room._id}</h3>
+                            <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${statusBadgeClass}">
+                                ${room.status}
+                            </span>
+                        </div>
+                        <p class="text-slate-400 text-xs font-mono">Type Config: ${room.room_type_id}</p>
+                    </div>
+                    
+                    <div class="mt-6 pt-4 border-t border-slate-700/50 flex gap-2">
+                        ${actionButtonHTML}
+                    </div>
+                `;
+                gridContainer.appendChild(card);
+            });
+
+        } catch (error) {
+            console.error("Using template view mode:", error);
+            gridContainer.innerHTML = '<p class="text-red-400 col-span-4 text-center py-12">⚠️ Error connecting to server engine.</p>';
+        }
+    }
+
+    // 2. NEW FUNCTION: State Machine Controller
+    async function updateRoomStatus(roomId, newStatus) {
+        try {
+            const response = await secureFetch(`http://localhost:5000/api/bookings/rooms/${roomId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (response.ok) {
+                // Instantly refresh the board to show the new visual state
+                fetchRooms();
+            } else {
+                alert("Failed to change room status.");
+            }
+        } catch (error) {
+            alert("Network error updating status.");
+        }
+    }
+
+    window.onload = fetchRooms;
+</script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Kataragama - Front Desk Check-In</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="js/auth.js"></script>
+<script>
+    // 1. Force authentication on page load
+    checkAuth();
+
+    // 2. Use secureFetch instead of standard fetch
+    async function loadData() {
+        const res = await secureFetch('/api/billing/dashboard');
+        const data = await res.json();
+        
+        // Handle standardized error
+        if (!res.ok) {
+            console.error("Error:", data.error);
+            return;
+        }
+        console.log("Data loaded:", data);
+    }
+</script>
+
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans p-8">
+    <nav class="bg-slate-800 p-4 flex gap-6">
+    <a href="index.html" class="text-white hover:text-blue-400">Dashboard</a>
+    <a href="checkin.html" class="text-white hover:text-blue-400">Check-In</a>
+    <a href="billing.html" class="text-white hover:text-blue-400">Billing</a>
+    <button onclick="logout()" class="ml-auto text-red-400">Logout</button>
+</nav>
+
+    <header class="mb-8 border-b border-slate-700 pb-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight text-blue-500">FRONT DESK CHECK-IN</h1>
+            <p class="text-slate-400 text-sm">Guest Registration & Room Allocation Engine</p>
+        </div>
+        <div class="flex gap-4">
+            <a href="rooms.html" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-2 px-4 rounded-lg border border-slate-700 transition">
+                🏨 Room Matrix
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto bg-slate-800 p-8 rounded-xl border border-slate-700 shadow-2xl">
+        <div id="alert-box" class="hidden mb-6 p-4 rounded-lg font-medium text-sm"></div>
+
+        <form id="checkin-form" class="space-y-6">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Booking ID</label>
+                    <input type="text" id="booking_id" required placeholder="e.g., BKG-2026-001" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Select Available Room</label>
+                    <select id="room_id" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+                        <option value="">-- Loading Rooms... --</option>
+                    </select>
+                </div>
+            </div>
+
+            <hr class="border-slate-700/50">
+
+            <h3 class="text-lg font-semibold text-slate-300">Guest Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Guest NIC / Passport</label>
+                    <input type="text" id="guest_nic" required placeholder="e.g., 200012345678" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Contact Number</label>
+                    <input type="text" id="contact_number" required placeholder="e.g., 0771234567" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">First Name</label>
+                    <input type="text" id="first_name" required placeholder="John" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Last Name</label>
+                    <input type="text" id="last_name" required placeholder="Doe" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Email Address</label>
+                <input type="email" id="email" required placeholder="john@example.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+            </div>
+
+            <hr class="border-slate-700/50">
+
+            <h3 class="text-lg font-semibold text-slate-300">Stay Duration</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Check-In Date</label>
+                    <input type="date" id="check_in_date" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Check-Out Date</label>
+                    <input type="date" id="check_out_date" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition shadow-lg tracking-wide uppercase text-sm">
+                Confirm Booking & Allocate Room
+            </button>
+        </form>
+    </main>
+
+    <script>
+        // Fetch and populate available rooms on page load
+        async function loadAvailableRooms() {
+            const dropdown = document.getElementById('room_id');
+            try {
+                const response = await secureFetch('http://localhost:5000/api/bookings/rooms');
+                const rooms = await response.json();
+                
+                dropdown.innerHTML = '<option value="">-- Select a Room --</option>';
+                
+                rooms.forEach(room => {
+                    if (room.status === 'Available') {
+                        const option = document.createElement('option');
+                        option.value = room._id;
+                        option.text = `Room ${room._id}`;
+                        dropdown.appendChild(option);
+                    }
+                });
+            } catch (err) {
+                dropdown.innerHTML = '<option value="">-- Error Loading Rooms --</option>';
+                console.error("Error fetching rooms:", err);
+            }
+        }
+
+        window.onload = loadAvailableRooms;
+
+        document.getElementById('checkin-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const alertBox = document.getElementById('alert-box');
+            
+            const payload = {
+                booking_id: document.getElementById('booking_id').value,
+                room_id: document.getElementById('room_id').value,
+                guest_nic: document.getElementById('guest_nic').value,
+                first_name: document.getElementById('first_name').value,
+                last_name: document.getElementById('last_name').value,
+                email: document.getElementById('email').value,
+                contact_number: document.getElementById('contact_number').value,
+                check_in_date: document.getElementById('check_in_date').value,
+                check_out_date: document.getElementById('check_out_date').value
+            };
+
+            try {
+                const response = await secureFetch('http://localhost:5000/api/bookings/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                alertBox.classList.remove('hidden', 'bg-red-950/40', 'text-red-400', 'border-red-900/50', 'bg-emerald-950/40', 'text-emerald-400', 'border-emerald-900/50');
+
+                if (response.status === 201) {
+                    alertBox.classList.add('bg-emerald-950/40', 'text-emerald-400', 'border', 'border-emerald-900/50');
+                    alertBox.innerText = `🎉 Success: ${data.message}`;
+                    document.getElementById('checkin-form').reset();
+                    loadAvailableRooms(); // Refresh the list
+                } else {
+                    alertBox.classList.add('bg-red-950/40', 'text-red-400', 'border', 'border-red-900/50');
+                    alertBox.innerText = `⚠️ Error: ${data.error || 'Check server logs.'}`;
+                }
+            } catch (error) {
+                alertBox.classList.remove('hidden');
+                alertBox.classList.add('bg-red-950/40', 'text-red-400', 'border', 'border-red-900/50');
+                alertBox.innerText = "⚠️ Network Error: Unable to reach the backend gateway API.";
+            }
+        });
+
+
+
+    </script>
+</body>
+</html>

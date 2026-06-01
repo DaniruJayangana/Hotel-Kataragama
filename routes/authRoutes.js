@@ -1,69 +1,80 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const asyncHandler = require('../middleware/asyncHandler'); // Import helper
 const UserAccount = require('../models/UserAccount');
 const Staff = require('../models/Staff');
+const authorize = require('../middleware/authMiddleware');
 
-// 1. REGISTER NEW STAFF & ACCOUNT (Admin Only Workflow)
-router.post('/register', async (req, res) => {
-    try {
-        const { staff_id, first_name, last_name, role, hire_date, salary, username, password, access_level } = req.body;
+// 1. REGISTER NEW STAFF & ACCOUNT
+router.post('/register', asyncHandler(async (req, res) => {
+    const { staff_id, first_name, last_name, role, hire_date, salary, username, password, access_level } = req.body;
 
-        // Create the physical Staff record first
-        const newStaff = new Staff({
-            _id: staff_id,
-            first_name,
-            last_name,
-            role,
-            hire_date,
-            salary
-        });
-        await newStaff.save();
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create the digital User Account linked to that staff member
-        const newUserAccount = new UserAccount({
-            staff_id: newStaff._id,
-            username,
-            password, // Note: In production, hash this with bcrypt before saving
-            access_level
-        });
-        await newUserAccount.save();
+    // Create Staff record
+    const newStaff = await Staff.create({
+        _id: staff_id,
+        first_name,
+        last_name,
+        role,
+        hire_date,
+        salary
+    });
 
-        res.status(201).json({ message: "Staff and User Account created successfully!" });
-    } catch (err) {
-        res.status(500).json({ error: "Registration failed", details: err.message });
-    }
-});
+    // Create User Account
+    const newUserAccount = await UserAccount.create({
+        staff_id: newStaff._id,
+        username,
+        password: hashedPassword,
+        access_level
+    });
+
+    res.status(201).json({ message: "Staff and User Account created successfully!" });
+}));
 
 // 2. STAFF LOGIN
-router.post('/login', async (req, res) => {
-    try {
-        const { username, password } = req.body;
+router.post('/login', asyncHandler(async (req, res) => {
+    const { username, password } = req.body;
 
-        // Find user and populate their physical staff details
-        const user = await UserAccount.findOne({ username }).populate('staff_id');
-        
-        if (!user) {
-            return res.status(404).json({ error: "Invalid username or account does not exist." });
-        }
-        if (!user.is_active) {
-            return res.status(403).json({ error: "This account has been deactivated by the administrator." });
-        }
-        if (user.password !== password) {
-            return res.status(401).json({ error: "Incorrect password." });
-        }
-
-        // Return access control details to the client application
-        res.status(200).json({
-            message: "Login successful!",
-            user: {
-                username: user.username,
-                access_level: user.access_level,
-                staff_details: user.staff_id
-            }
-        });
-    } catch (err) {
-        res.status(500).json({ error: "Login process failed", details: err.message });
+    const user = await UserAccount.findOne({ username }).populate('staff_id');
+    
+    if (!user) {
+        const error = new Error("Account not found.");
+        error.status = 404;
+        throw error;
     }
-});
+    
+    if (!user.is_active) {
+        const error = new Error("Account deactivated.");
+        error.status = 403;
+        throw error;
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+        const error = new Error("Incorrect password.");
+        error.status = 401;
+        throw error;
+    }
+
+    const token = jwt.sign(
+        { userId: user._id, role: user.access_level }, 
+        process.env.JWT_SECRET, 
+        { expiresIn: '8h' }
+    );
+
+    res.status(200).json({
+        message: "Login successful!",
+        token: token,
+        user: {
+            username: user.username,
+            access_level: user.access_level,
+            staff_details: user.staff_id
+        }
+    });
+}));
 
 module.exports = router;

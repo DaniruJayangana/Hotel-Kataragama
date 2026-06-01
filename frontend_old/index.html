@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Kataragama - Management Command Center</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="js/auth.js"></script>
+<script>
+    // 1. Force authentication on page load
+    checkAuth();
+
+    // 2. Initialize all data on load
+    window.onload = async () => {
+        // Run all your initial data fetches here
+        await loadDashboardMetrics();
+        // You could add other initializations here:
+        // await loadKitchenStatus();
+    };
+
+    async function loadDashboardMetrics() {
+        try {
+            // Updated to relative URL (assumes same host)
+            const response = await secureFetch('/api/bookings/rooms');
+            if(!response.ok) return;
+            
+            const rooms = await response.json();
+
+            const bookedCount = rooms.filter(r => r.status === 'Booked').length;
+            const cleaningCount = rooms.filter(r => r.status === 'Cleaning').length;
+
+            document.getElementById('stat-occupancy').innerText = bookedCount;
+            document.getElementById('stat-cleaning').innerText = cleaningCount;
+        } catch (err) {
+            console.error("Dashboard metric data aggregation failed:", err);
+        }
+    }
+</script>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans p-8">
+    <nav class="bg-slate-800 p-4 flex gap-6">
+    <a href="index.html" class="text-white hover:text-blue-400">Dashboard</a>
+    <a href="checkin.html" class="text-white hover:text-blue-400">Check-In</a>
+    <a href="billing.html" class="text-white hover:text-blue-400">Billing</a>
+    <button onclick="logout()" class="ml-auto text-red-400">Logout</button>
+</nav>
+
+    <header class="mb-10 border-b border-slate-800 pb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-4xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-violet-400 to-emerald-400 bg-clip-text text-transparent">
+                HOTEL KATARAGAMA
+            </h1>
+            <p class="text-slate-400 text-sm mt-1">Unified Property Management System | Core Control Panel</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="text-right font-mono text-xs text-slate-500">
+                <p>System Status: <span class="text-emerald-400 font-bold animate-pulse">● OPERATIONAL</span></p>
+            </div>
+            <button onclick="localStorage.clear(); window.location.href='login.html'" class="text-xs bg-red-900/20 text-red-400 hover:bg-red-900/40 px-3 py-1 rounded border border-red-900/50 transition">
+                Logout
+            </button>
+        </div>
+    </header>
+
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-800 shadow-lg">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Live Occupancy Rate</p>
+            <div class="flex items-baseline gap-2 mt-2">
+                <span id="stat-occupancy" class="text-3xl font-black text-blue-400">--</span>
+                <span class="text-slate-500 text-xs font-medium">Active Bookings</span>
+            </div>
+        </div>
+        <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-800 shadow-lg">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Housekeeping Queue</p>
+            <div class="flex items-baseline gap-2 mt-2">
+                <span id="stat-cleaning" class="text-3xl font-black text-orange-400">--</span>
+                <span class="text-slate-500 text-xs font-medium">Rooms In Cleaning</span>
+            </div>
+        </div>
+        <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-800 shadow-lg">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Kitchen Activity</p>
+            <div class="flex items-baseline gap-2 mt-2">
+                <span id="stat-kitchen" class="text-3xl font-black text-violet-400">Active</span>
+                <span class="text-slate-500 text-xs font-medium">Order Monitor Online</span>
+            </div>
+        </div>
+    </section>
+
+    <h2 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6">Subsystem Module Portals</h2>
+    <main class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <a href="checkin.html" class="group bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-blue-500/50 transition flex flex-col justify-between shadow-xl">
+            <h3 class="text-xl font-bold text-white group-hover:text-blue-400 transition">🔑 Front Desk Check-In</h3>
+            <p class="text-slate-400 text-sm mt-3 leading-relaxed">Register arriving clients, input guest profiles, and assign room allocations.</p>
+        </a>
+        <a href="rooms.html" class="group bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-emerald-500/50 transition flex flex-col justify-between shadow-xl">
+            <h3 class="text-xl font-bold text-white group-hover:text-emerald-400 transition">🏨 Room Management Board</h3>
+            <p class="text-slate-400 text-sm mt-3 leading-relaxed">Monitor live room conditions: Available, Booked, and Housekeeping states.</p>
+        </a>
+        <a href="billing.html" class="group bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-violet-500/50 transition flex flex-col justify-between shadow-xl">
+            <h3 class="text-xl font-bold text-white group-hover:text-violet-400 transition">🧾 Billing & Checkout</h3>
+            <p class="text-slate-400 text-sm mt-3 leading-relaxed">Fetch live guest logs, compute metrics, and settle payments.</p>
+        </a>
+        <a href="kitchen.html" class="group bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-orange-500/50 transition flex flex-col justify-between shadow-xl">
+            <h3 class="text-xl font-bold text-white group-hover:text-orange-400 transition">🍔 Kitchen Display System</h3>
+            <p class="text-slate-400 text-sm mt-3 leading-relaxed">Back-of-house production monitor tracking live culinary prep streams.</p>
+        </a>
+    </main>
+
+    <script>
+        async function loadDashboardMetrics() {
+            try {
+                // Use secureFetch instead of standard fetch
+                const response = await secureFetch('http://localhost:5000/api/bookings/rooms');
+                if(!response.ok) return;
+                const rooms = await response.json();
+
+                const bookedCount = rooms.filter(r => r.status === 'Booked').length;
+                const cleaningCount = rooms.filter(r => r.status === 'Cleaning').length;
+
+                document.getElementById('stat-occupancy').innerText = bookedCount;
+                document.getElementById('stat-cleaning').innerText = cleaningCount;
+            } catch (err) {
+                console.error("Dashboard metric data aggregation failed.");
+            }
+        }
+        window.onload = loadDashboardMetrics;
+    </script>
+</body>
+</html>

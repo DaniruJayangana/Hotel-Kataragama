@@ -1,117 +1,116 @@
 const express = require('express');
 const router = express.Router();
+const asyncHandler = require('../middleware/asyncHandler');
+// Change this line in bookingRoutes.js:
+const { authorize } = require('../middleware/authMiddleware');
+
 const RestaurantOrder = require('../models/RestaurantOrder');
 const OrderItem = require('../models/OrderItem');
 const MenuItem = require('../models/MenuItem');
 const InventoryItem = require('../models/InventoryItem');
 
-// 1. PLACE A NEW RESTAURANT ORDER (Calculates subtotals & total dynamically)
-router.post('/order/create', async (req, res) => {
-    try {
-        const { order_id, booking_id, table_number, items } = req.body;
-        // Expected format for items array: [{ menu_item_id: "FD001", quantity: 2 }]
+// 1. PLACE A NEW RESTAURANT ORDER
+// Secure: Staff can place orders
+router.post('/order/create', authorize(['Manager', 'Staff']), asyncHandler(async (req, res) => {
+    const { booking_id, table_number, items } = req.body;
 
-        if (!items || items.length === 0) {
-            return res.status(400).json({ error: "Cannot process an empty order. Please add menu items." });
+    if (!items || items.length === 0) {
+        const error = new Error("Cannot process an empty order.");
+        error.status = 400;
+        throw error;
+    }
+
+    const orderCount = await RestaurantOrder.countDocuments();
+    const generatedOrderId = `ORD${1001 + orderCount}`;
+
+    let totalCalculatedAmount = 0;
+    const processedOrderItems = [];
+
+    for (const element of items) {
+        const menuItem = await MenuItem.findById(element.menu_item_id);
+        if (!menuItem || !menuItem.is_available) {
+            const error = new Error(`Item not found or sold out.`);
+            error.status = 400;
+            throw error;
         }
 
-        let totalCalculatedAmount = 0;
-        const processedOrderItems = [];
+        const itemSubtotal = menuItem.price * element.quantity;
+        totalCalculatedAmount += itemSubtotal;
 
-        // Loop through each ordered item to fetch live database prices and calculate costs
-        for (const element of items) {
-            const menuItem = await MenuItem.findById(element.menu_item_id);
-            if (!menuItem) {
-                return res.status(404).json({ error: `Menu item ${element.menu_item_id} not found.` });
-            }
-            if (!menuItem.is_available) {
-                return res.status(400).json({ error: `Item '${menuItem.item_name}' is currently sold out.` });
-            }
-
-            const itemSubtotal = menuItem.price * element.quantity;
-            totalCalculatedAmount += itemSubtotal;
-
-            processedOrderItems.push({
-                order_id: order_id,
-                menu_item_id: menuItem._id,
-                quantity: element.quantity,
-                subtotal: itemSubtotal
-            });
-        }
-
-        // Create and save the master Restaurant Order document
-        const newOrder = new RestaurantOrder({
-            _id: order_id,
-            booking_id: booking_id || null, // Can be null if it's a direct walk-in cash customer
-            table_number,
-            total_amount: totalCalculatedAmount,
-            order_status: 'Pending'
+        processedOrderItems.push({
+            order_id: generatedOrderId,
+            menu_item_id: menuItem._id,
+            quantity: element.quantity,
+            subtotal: itemSubtotal
         });
-        await newOrder.save();
-
-        // Save all associated sub-items into the OrderItem collection
-        await OrderItem.insertMany(processedOrderItems);
-
-        res.status(201).json({
-            message: "Restaurant order placed successfully!",
-            order_summary: newOrder,
-            items_ordered: processedOrderItems
-        });
-    } catch (err) {
-        res.status(500).json({ error: "POS ordering failure", details: err.message });
     }
-});
 
-// 2. UPDATE KITCHEN ORDER STATUS (Lifecycle manipulation)
-router.put('/order/:id/status', async (req, res) => {
-    try {
-        const { status } = req.body; // e.g., 'Cooking', 'Served', 'Paid', 'Cancelled'
-        const allowedStatuses = ['Pending', 'Cooking', 'Served', 'Paid', 'Cancelled'];
+    const newOrder = await RestaurantOrder.create({
+        _id: generatedOrderId,
+        booking_id: booking_id || null,
+        table_number,
+        total_amount: totalCalculatedAmount,
+        order_status: 'Pending'
+    });
 
-        if (!allowedStatuses.includes(status)) {
-            return res.status(400).json({ error: "Invalid status value provided." });
-        }
+    await OrderItem.insertMany(processedOrderItems);
 
-        const order = await RestaurantOrder.findById(req.params.id);
-        if (!order) {
-            return res.status(404).json({ error: "Restaurant order not found." });
-        }
+    res.status(201).json({ message: "Order placed!", order_id: generatedOrderId });
+}));
 
-        order.order_status = status;
-        await order.save();
+// 2. UPDATE KITCHEN ORDER STATUS
+router.put('/order/:id/status', authorize(['Manager', 'Staff']), asyncHandler(async (req, res) => {
+    const order = await RestaurantOrder.findByIdAndUpdate(
+        req.params.id, 
+        { order_status: req.body.status }, 
+        { new: true }
+    );
+    res.status(200).json({ message: "Status updated", order });
+}));
 
-        res.status(200).json({ message: `Order status successfully updated to: ${status}`, order });
-    } catch (err) {
-        res.status(500).json({ error: "Failed to update order status", details: err.message });
-    }
-});
+// 3. GET ACTIVE KDS QUEUE
+router.get('/orders/active', authorize(['Manager', 'Staff']), asyncHandler(async (req, res) => {
+    const activeOrders = await RestaurantOrder.find({ order_status: { $in: ['Pending', 'Cooking'] } });
+    res.status(200).json(activeOrders);
+}));
 
-// 3. GET LIVE KITCHEN DISPLAY SYSTEM (KDS) QUEUE
-router.get('/orders/active', async (req, res) => {
-    try {
-        // Fetch orders that are currently being processed in the kitchen
-        const activeOrders = await RestaurantOrder.find({ order_status: { $in: ['Pending', 'Cooking'] } });
-        res.status(200).json(activeOrders);
-    } catch (err) {
-        res.status(500).json({ error: "Failed to retrieve kitchen queue", details: err.message });
-    }
-});
+// 4. GET TABLES WITH ACTIVE ORDERS
+router.get('/orders/active-tables', authorize(['Manager', 'Staff']), asyncHandler(async (req, res) => {
+    const activeTables = await RestaurantOrder.distinct('table_number', { 
+        order_status: { $in: ['Pending', 'Cooking', 'Served'] } 
+    });
+    
+    const formattedTables = activeTables.map(t => ({ table_number: t }));
+    res.status(200).json(formattedTables);
+}));
 
-// 4. INVENTORY MONITORING: GET LOW STOCK ALERTS
-router.get('/inventory/low-stock', async (req, res) => {
-    try {
-        // Query to check where quantity in stock is equal to or less than the reorder safety line
-        const lowStockItems = await InventoryItem.find({
-            $expr: { $lte: ["$quantity_in_stock", "$reorder_level"] }
-        }).populate('supplier_id', 'supplier_name contact_number');
+// 5. GET UNPAID ORDERS FOR ROOM OR TABLE
+router.get('/orders/unpaid/:roomOrTable', authorize(['Manager', 'Staff']), asyncHandler(async (req, res) => {
+    const unpaidOrders = await RestaurantOrder.find({
+        table_number: req.params.roomOrTable,
+        order_status: { $in: ['Pending', 'Cooking', 'Served'] }
+    });
 
-        res.status(200).json({
-            count: lowStockItems.length,
-            alerts: lowStockItems
-        });
-    } catch (err) {
-        res.status(500).json({ error: "Failed to run stock analysis report", details: err.message });
-    }
-});
+    res.status(200).json(unpaidOrders);
+}));
+
+// 6. BULK MARK ORDERS AS PAID
+router.put('/orders/pay-room/:roomOrTable', authorize(['Manager', 'Staff']), asyncHandler(async (req, res) => {
+    const result = await RestaurantOrder.updateMany(
+        {
+            table_number: req.params.roomOrTable,
+            order_status: { $in: ['Pending', 'Cooking', 'Served'] }
+        },
+        { $set: { order_status: 'Paid' } }
+    );
+
+    res.status(200).json({ message: "Settled", affected: result.modifiedCount });
+}));
+
+// 7. GET INVENTORY
+router.get('/inventory/all', authorize(['Manager', 'Staff']), asyncHandler(async (req, res) => {
+    const allItems = await InventoryItem.find({}).populate('supplier_id', 'supplier_name');
+    res.status(200).json(allItems);
+}));
 
 module.exports = router;

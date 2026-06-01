@@ -1,32 +1,50 @@
 const express = require('express');
+const cors = require('cors');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const helmet = require('helmet'); // New: Secures your HTTP headers
+const errorHandler = require('./middleware/errorHandler'); // New: Your custom error handler
+const invoiceRoutes = require('./routes/invoiceRoutes');
 
+
+// 1. Initialize environment
 dotenv.config();
 
 const app = express();
 
-// Middleware to parse incoming JSON payloads
-app.use(express.json());
+// 2. Security & Parsing Middleware
+app.use(helmet()); // Protects against common web vulnerabilities
+app.use(cors());   // Allows cross-origin requests
+app.use(express.json()); // Processes JSON bodies
 
-// Database Connection
+// 3. Database Connection
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log("Database Connected Successfully"))
-    .catch((err) => console.log("Database Connection Error: ", err));
+    .catch((err) => {
+        console.error("Database Connection Error: ", err);
+        process.exit(1); // Stop server if DB fails to connect
+    });
 
-// Mount Application API Routes
+// 4. Mount Application API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api/restaurant', require('./routes/restaurantRoutes'));
 app.use('/api/billing', require('./routes/billingRoutes'));
+app.use('/api/invoices', invoiceRoutes);
 
-// Global Error Handling Middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: "Internal Server Error", details: err.message });
+
+// 5. Catch-all for undefined routes
+app.use((req, res, next) => {
+    const error = new Error("Route not found");
+    error.status = 404;
+    next(error);
 });
 
-// Port Listener
+// 6. Global Error Handling Middleware
+// This must be the very last piece of middleware
+app.use(errorHandler);
+
+// 7. Port Listener
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
