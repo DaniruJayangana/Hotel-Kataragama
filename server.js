@@ -32,6 +32,19 @@ app.use('/api/restaurant', require('./routes/restaurantRoutes'));
 app.use('/api/billing', require('./routes/billingRoutes'));
 app.use('/api/invoices', invoiceRoutes);
 
+// 4.5 Serve static assets in production
+const path = require('path');
+
+if (process.env.NODE_ENV === 'production') {
+    // Set static folder
+    app.use(express.static(path.join(__dirname, 'frontend/build')));
+
+    // Any route that is not an API route will be redirected to the React index.html
+    app.get('*', (req, res) => {
+        res.sendFile(path.resolve(__dirname, 'frontend', 'build', 'index.html'));
+    });
+}
+
 
 // 5. Catch-all for undefined routes
 app.use((req, res, next) => {
