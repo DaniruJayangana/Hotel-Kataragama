@@ -34,15 +34,14 @@ app.use('/api/invoices', invoiceRoutes);
 
 // 5. Production Static File Serving
 if (process.env.NODE_ENV === 'production') {
-    // Next.js static files are generated in the 'frontend/.next' folder
-    // However, if you are using 'output: export', they are in 'frontend/out'
     const buildPath = path.resolve(__dirname, 'frontend', 'out'); 
     
     app.use(express.static(buildPath));
 
-   app.get('/*', (req, res) => {
-    res.sendFile(path.join(buildPath, 'index.html'));
-});
+    // Use this regex syntax for Express v5 catch-all
+    app.get(/(.*)/, (req, res) => {
+        res.sendFile(path.join(buildPath, 'index.html'));
+    });
 }
 
 // 6. Catch-all for undefined routes
