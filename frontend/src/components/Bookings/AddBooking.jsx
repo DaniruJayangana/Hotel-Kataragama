@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createBooking } from '../services/bookingService';
+import { createBooking } from '../../services/bookingService';
 
 function AddBooking() {
     const [formData, setFormData] = useState({ room_id: '', guest_name: '', check_in: '', check_out: '' });
