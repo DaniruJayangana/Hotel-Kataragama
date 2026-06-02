@@ -38,10 +38,10 @@ if (process.env.NODE_ENV === 'production') {
     const buildPath = path.join(__dirname, 'frontend/build');
     app.use(express.static(buildPath));
 
-    // CHANGE '/*splat' TO '*'
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(buildPath, 'index.html'));
-    });
+    // The asterisk is passed as a regex, which bypasses the PathError
+app.get(/.*/, (req, res) => {
+    res.sendFile(path.join(buildPath, 'index.html'));
+});
 }
 
 // 5. Catch-all for undefined routes
