@@ -1,10 +1,6 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  // Turbopack root configuration for multi-package setups
-  turbopack: {
-    root: process.cwd(),
-  },
+const nextConfig = {
+  output: 'export', // <--- This forces Next.js to create the 'out' folder
+  images: { unoptimized: true }, // Needed for static export
+  turbopack: { root: process.cwd() },
 };
-
 export default nextConfig;
