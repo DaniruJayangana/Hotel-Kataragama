@@ -38,8 +38,11 @@ if (process.env.NODE_ENV === 'production') {
     
     app.use(express.static(buildPath));
 
-    // Use this regex syntax for Express v5 catch-all
-    app.get(/(.*)/, (req, res) => {
+    // Refined: Only send index.html if the request is NOT an API call
+    app.get(/(.*)/, (req, res, next) => {
+        if (req.url.startsWith('/api')) {
+            return next(); // Skip this and go to the 404 handler below
+        }
         res.sendFile(path.join(buildPath, 'index.html'));
     });
 }
