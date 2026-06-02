@@ -1,14 +1,11 @@
 # Dependencies
 node_modules/
 frontend/node_modules/
+.next/
+frontend/.next/
+out/
+frontend/out/
 
 # Environment Variables
 .env
-
-# Build outputs
-frontend/build/
-frontend/dist/
-
-# Logs and system files
-*.log
-.DS_Store
+.env.local
