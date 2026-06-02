@@ -1,26 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import RevenueReport from './components/RevenueReport';
-import Login from './components/Login'; // Ensure this file exists in components/
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import RevenueReport from './components/RevenueReport'; // Adjust path
+import BookingList from './components/Bookings/BookingList'; // Adjust path
+import AddBooking from './components/Bookings/AddBooking';   // Adjust path
+import Login from './components/Login';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    // Check if token exists in localStorage when the app starts
-    const token = localStorage.getItem('token');
-    if (token) {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
   return (
-    <div className="App">
-      {isAuthenticated ? (
-        <RevenueReport />
-      ) : (
-        <Login />
-      )}
-    </div>
+    <Router>
+      <div>
+        <nav style={{ padding: '10px', borderBottom: '1px solid #ccc' }}>
+          <Link to="/">Revenue Report</Link> | 
+          <Link to="/bookings"> View Bookings</Link> | 
+          <Link to="/add-booking"> Add Booking</Link>
+        </nav>
+
+        <Routes>
+          <Route path="/" element={<RevenueReport />} />
+          <Route path="/bookings" element={<BookingList />} />
+          <Route path="/add-booking" element={<AddBooking />} />
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
