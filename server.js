@@ -2,8 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const helmet = require('helmet'); // New: Secures your HTTP headers
-const errorHandler = require('./middleware/errorHandler'); // New: Your custom error handler
+const helmet = require('helmet');
+const path = require('path'); // <--- THIS MUST BE HERE
+const errorHandler = require('./middleware/errorHandler');
 const invoiceRoutes = require('./routes/invoiceRoutes');
 
 
