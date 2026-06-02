@@ -33,13 +33,15 @@ app.use('/api/restaurant', require('./routes/restaurantRoutes'));
 app.use('/api/billing', require('./routes/billingRoutes'));
 app.use('/api/invoices', invoiceRoutes);
 
-// 4.5 Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
-    const buildPath = path.join(__dirname, 'frontend/build');
+    // 1. Point to the absolute directory where 'build' actually lives
+    const buildPath = path.resolve(__dirname, 'frontend', 'build');
+    
+    // 2. Serve static files
     app.use(express.static(buildPath));
 
-    // The asterisk is passed as a regex, which bypasses the PathError
-app.get(/.*/, (req, res) => {
+    // 3. Ensure index.html is served for all client-side routes
+    app.get(/.*/, (req, res) => {
     res.sendFile(path.join(buildPath, 'index.html'));
 });
 }
