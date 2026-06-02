@@ -34,16 +34,15 @@ app.use('/api/billing', require('./routes/billingRoutes'));
 app.use('/api/invoices', invoiceRoutes);
 
 if (process.env.NODE_ENV === 'production') {
-    // 1. Point to the absolute directory where 'build' actually lives
+    // Render defaults to the root directory. 
+    // If your build is in frontend/build, this is the correct path:
     const buildPath = path.resolve(__dirname, 'frontend', 'build');
     
-    // 2. Serve static files
     app.use(express.static(buildPath));
 
-    // 3. Ensure index.html is served for all client-side routes
     app.get(/.*/, (req, res) => {
-    res.sendFile(path.join(buildPath, 'index.html'));
-});
+        res.sendFile(path.join(buildPath, 'index.html'));
+    });
 }
 
 // 5. Catch-all for undefined routes
