@@ -13,22 +13,28 @@ const RevenueReport = () => {
 
     try {
       const token = localStorage.getItem('token'); 
-      const response = await axios.get(
-        `http://localhost:5000/api/billing/reports/revenue`,
-        { 
+      
+      // FIX: Use relative path '/api/...' instead of 'http://localhost:5000/api/...'
+      // This fixes the CSP 'default-src self' blocking issue on production.
+      const response = await axios.get(`/api/billing/reports/revenue`, { 
           params: { startDate: dates.start, endDate: dates.end },
-          headers: { Authorization: `Bearer ${token}` } 
-        }
-      );
+          headers: { 
+              Authorization: `Bearer ${token}` 
+          } 
+      });
+      
       setData(response.data);
     } catch (err) {
       console.error("Error fetching report:", err);
-      if (err.response && err.response.status === 401) {
+      
+      if (err.response?.status === 401) {
         alert("Session expired. Please log in again.");
         localStorage.removeItem('token');
         window.location.reload();
       } else {
-        alert("Failed to fetch report. Check console for details.");
+        // More descriptive error handling
+        const errorMessage = err.response?.data?.message || "Failed to fetch report.";
+        alert(errorMessage);
       }
     }
   };
