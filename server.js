@@ -32,17 +32,20 @@ app.use('/api/restaurant', require('./routes/restaurantRoutes'));
 app.use('/api/billing', require('./routes/billingRoutes'));
 app.use('/api/invoices', invoiceRoutes);
 
-// 4.5 Serve static assets in production
-const path = require('path');
-
+// Replace section 4.5 in your server.js with this:
 if (process.env.NODE_ENV === 'production') {
-    // Set static folder
-    app.use(express.static(path.join(__dirname, 'frontend/build')));
-
-    // Any route that is not an API route will be redirected to the React index.html
-    app.get('*', (req, res) => {
-        res.sendFile(path.resolve(__dirname, 'frontend', 'build', 'index.html'));
-    });
+    const buildPath = path.join(__dirname, 'frontend', 'build');
+    
+    // Only serve if the directory exists to prevent crash
+    const fs = require('fs');
+    if (fs.existsSync(buildPath)) {
+        app.use(express.static(buildPath));
+        app.get('*', (req, res) => {
+            res.sendFile(path.join(buildPath, 'index.html'));
+        });
+    } else {
+        console.warn("Build folder not found, skipping static file serving");
+    }
 }
 
 
