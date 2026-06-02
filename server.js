@@ -33,22 +33,17 @@ app.use('/api/restaurant', require('./routes/restaurantRoutes'));
 app.use('/api/billing', require('./routes/billingRoutes'));
 app.use('/api/invoices', invoiceRoutes);
 
-// Replace section 4.5 in your server.js with this:
+// 4.5 Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
-    const buildPath = path.join(__dirname, 'frontend', 'build');
+    const buildPath = path.join(__dirname, 'frontend/build');
     
-    // Only serve if the directory exists to prevent crash
-    const fs = require('fs');
-    if (fs.existsSync(buildPath)) {
-        app.use(express.static(buildPath));
-        app.get('*', (req, res) => {
-            res.sendFile(path.join(buildPath, 'index.html'));
-        });
-    } else {
-        console.warn("Build folder not found, skipping static file serving");
-    }
-}
+    app.use(express.static(buildPath));
 
+    // Update this line to use /*splat instead of *
+    app.get('/*splat', (req, res) => {
+        res.sendFile(path.join(buildPath, 'index.html'));
+    });
+}
 
 // 5. Catch-all for undefined routes
 app.use((req, res, next) => {
