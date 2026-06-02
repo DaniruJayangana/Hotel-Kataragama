@@ -36,11 +36,10 @@ app.use('/api/invoices', invoiceRoutes);
 // 4.5 Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
     const buildPath = path.join(__dirname, 'frontend/build');
-    
     app.use(express.static(buildPath));
 
-    // Update this line to use /*splat instead of *
-    app.get('/*splat', (req, res) => {
+    // CHANGE '/*splat' TO '*'
+    app.get('*', (req, res) => {
         res.sendFile(path.join(buildPath, 'index.html'));
     });
 }
