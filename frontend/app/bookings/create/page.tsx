@@ -18,15 +18,16 @@ export default function CreateBooking() {
     check_out_date: ''
   });
 
+  // 1. Fetch available rooms so the user can select one
   useEffect(() => {
-    // Fetch only available rooms
-    const fetchRooms = async () => {
+    const fetchAvailableRooms = async () => {
       try {
         const res = await api.get('/api/bookings/rooms');
+        // Filter only available rooms to avoid booking already occupied ones
         setRooms(res.data.filter((r: any) => r.status === 'Available'));
-      } catch (err) { console.error("Error fetching rooms:", err); }
+      } catch (err) { console.error("Error fetching rooms", err); }
     };
-    fetchRooms();
+    fetchAvailableRooms();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,7 +62,7 @@ export default function CreateBooking() {
         
         <select className="w-full p-2 border rounded" required onChange={(e) => setFormData({...formData, room_id: e.target.value})}>
           <option value="">Select an Available Room</option>
-          {rooms.map((r: any) => <option key={r._id} value={r._id}>{r._id}</option>)}
+          {rooms.map((r: any) => (<option key={r._id} value={r._id} className="text-black">{r._id}</option>))}
         </select>
 
         <div className="grid grid-cols-2 gap-4">
