@@ -61,7 +61,7 @@ export default function CreateBooking() {
         <input placeholder="Contact Number" className="w-full p-2 border rounded text-black placeholder-gray-500" required onChange={(e) => setFormData({...formData, contact_number: e.target.value})} />
         
         <select className="w-full p-2 border rounded" required onChange={(e) => setFormData({...formData, room_id: e.target.value})}>
-          <option value="" className="text-gray-500" disabled selected>Select an Available Room</option>
+          <option value="" className="w-full p-2 border rounded text-black placeholder-gray-500" disabled selected>Select an Available Room</option>
           {rooms.map((r: any) => (<option key={r._id} value={r._id} className="text-black">{r._id}</option>))}
         </select>
 
