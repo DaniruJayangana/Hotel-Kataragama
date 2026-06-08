@@ -25,38 +25,46 @@ export default function BookingsPage() {
   };
 
   const handleCheckOut = async (bookingId: string) => {
-  try {
-    const res = await api.post(`/api/bookings/checkout/${bookingId}`);
-    
-    // Alert the staff
-    const confirmPrint = confirm(`Checkout successful! Final Bill: $${res.data.finalBill}. Do you want to print the invoice?`);
-    
-    if (confirmPrint) {
-      // Create a small hidden window for printing
-      const printWindow = window.open('', '_blank', 'width=600,height=600');
-      printWindow?.document.write(`
-        <html>
-          <head><title>Invoice</title></head>
-          <body style="font-family: sans-serif; padding: 20px;">
-            <h1>Hotel Kataragama - Invoice</h1>
-            <p>Booking ID: ${bookingId}</p>
-            <hr />
-            <p><strong>Room Charges:</strong> $${res.data.details.roomTotal}</p>
-            <p><strong>Restaurant Charges:</strong> $${res.data.details.restaurantTotal}</p>
-            <h2>Total Amount Due: $${res.data.finalBill}</h2>
-          </body>
-        </html>
-      `);
-      printWindow?.document.close();
-      printWindow?.print();
+    try {
+      const res = await api.post(`/api/bookings/checkout/${bookingId}`);
+      const confirmPrint = confirm(`Checkout successful! Final Bill: $${res.data.finalBill}. Do you want to print the invoice?`);
+      
+      if (confirmPrint) {
+        const printWindow = window.open('', '_blank', 'width=600,height=600');
+        printWindow?.document.write(`
+          <html>
+            <head><title>Invoice</title></head>
+            <body style="font-family: sans-serif; padding: 20px;">
+              <h1>Hotel Kataragama - Invoice</h1>
+              <p>Booking ID: ${bookingId}</p>
+              <hr />
+              <p><strong>Room Charges:</strong> $${res.data.details.roomTotal}</p>
+              <p><strong>Restaurant Charges:</strong> $${res.data.details.restaurantTotal}</p>
+              <h2>Total Amount Due: $${res.data.finalBill}</h2>
+            </body>
+          </html>
+        `);
+        printWindow?.document.close();
+        printWindow?.print();
+      }
+      fetchBookings();
+    } catch (err) { 
+      console.error(err); 
+      alert("Checkout failed.");
     }
-    
-    fetchBookings();
-  } catch (err) { 
-    console.error(err); 
-    alert("Checkout failed.");
-  }
-};
+  };
+
+  const handleCancel = async (bookingId: string) => {
+    if (!confirm("Are you sure you want to cancel this booking?")) return;
+    try {
+      await api.post(`/api/bookings/cancel/${bookingId}`);
+      alert("Booking cancelled successfully.");
+      fetchBookings();
+    } catch (err) {
+      console.error("Cancellation failed:", err);
+      alert("Failed to cancel booking.");
+    }
+  };
 
   return (
     <div className="p-6">
@@ -69,18 +77,26 @@ export default function BookingsPage() {
             <p className="text-sm font-bold text-blue-600">Status: {b.booking_status}</p>
           </div>
 
-          <div>
-            {/* Logic for Check-in */}
+          <div className="flex gap-2">
+            {/* Logic for Confirmed Bookings: Shows Check-in AND Cancel */}
             {b.booking_status === 'Confirmed' && (
-              <button 
-                onClick={() => handleCheckIn(b._id)}
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-              >
-                Check-in
-              </button>
+              <>
+                <button 
+                  onClick={() => handleCheckIn(b._id)}
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                >
+                  Check-in
+                </button>
+                <button 
+                  onClick={() => handleCancel(b._id)}
+                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+              </>
             )}
 
-            {/* Logic for Check-out */}
+            {/* Logic for CheckedIn Bookings: Shows Check-out */}
             {b.booking_status === 'CheckedIn' && (
               <button 
                 onClick={() => handleCheckOut(b._id)}

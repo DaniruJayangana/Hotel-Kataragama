@@ -171,4 +171,28 @@ router.post('/checkout/:id', authenticate, authorize(['Admin', 'Manager', 'Recep
     });
 }));
 
+// POST /api/bookings/cancel/:id
+router.post('/cancel/:id', authenticate, authorize(['Admin', 'Manager', 'Receptionist']), asyncHandler(async (req, res) => {
+    // 1. Find the booking
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) throw new Error("Booking not found");
+
+    // 2. Only allow cancellation if it's still 'Confirmed'
+    if (booking.booking_status !== 'Confirmed') {
+        res.status(400);
+        throw new Error("Only 'Confirmed' bookings can be cancelled.");
+    }
+
+    // 3. Update Status
+    booking.booking_status = 'Cancelled';
+    await booking.save();
+
+    // 4. Release the room back to 'Available'
+    await Room.findByIdAndUpdate(booking.room_id, { status: 'Available' });
+
+    res.status(200).json({ message: "Booking cancelled successfully and room is now available." });
+}));
+
+
+
 module.exports = router;
