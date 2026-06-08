@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const asyncHandler = require('../middleware/asyncHandler');
 // Change this line in bookingRoutes.js:
-const { authorize } = require('../middleware/authMiddleware');
-
+const { authenticate, authorize } = require('../middleware/authMiddleware');
 const RestaurantOrder = require('../models/RestaurantOrder');
 const OrderItem = require('../models/OrderItem');
 const MenuItem = require('../models/MenuItem');
@@ -11,7 +10,7 @@ const InventoryItem = require('../models/InventoryItem');
 
 // 1. PLACE A NEW RESTAURANT ORDER
 // Secure: Staff can place orders
-router.post('/order/create', authorize(['Manager', 'Staff']), asyncHandler(async (req, res) => {
+router.post('/order/create', authenticate, authorize(['Manager', 'Staff']), asyncHandler(async (req, res) => {
     const { booking_id, table_number, items } = req.body;
 
     if (!items || items.length === 0) {
