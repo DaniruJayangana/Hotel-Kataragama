@@ -7,17 +7,14 @@ const path = require('path');
 const errorHandler = require('./middleware/errorHandler');
 const invoiceRoutes = require('./routes/invoiceRoutes');
 
-// 1. Initialize environment
 dotenv.config();
 
 const app = express();
 
-// 2. Security & Parsing Middleware
 app.use(helmet()); 
 app.use(cors());   
 app.use(express.json()); 
 
-// 3. Database Connection
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log("Database Connected Successfully"))
     .catch((err) => {
@@ -25,39 +22,31 @@ mongoose.connect(process.env.MONGODB_URI)
         process.exit(1); 
     });
 
-// 4. Mount Application API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api/restaurant', require('./routes/restaurantRoutes'));
 app.use('/api/billing', require('./routes/billingRoutes'));
 app.use('/api/invoices', invoiceRoutes);
 
-// 5. Production Static File Serving
+// --- UPDATED PRODUCTION STATIC FILE SERVING ---
 if (process.env.NODE_ENV === 'production') {
-    const buildPath = path.resolve(__dirname, 'frontend', 'out'); 
+    // We point to the root build or skip serving if you are using Vercel/Render for frontend separately
+    const buildPath = path.resolve(__dirname, 'frontend', '.next'); 
     
-    app.use(express.static(buildPath));
-
-    // Refined: Only send index.html if the request is NOT an API call
-    app.get(/(.*)/, (req, res, next) => {
-        if (req.url.startsWith('/api')) {
-            return next(); // Skip this and go to the 404 handler below
-        }
-        res.sendFile(path.join(buildPath, 'index.html'));
-    });
+    // Note: Serving a Next.js .next folder directly with express.static is often problematic.
+    // It is highly recommended to deploy the frontend as a separate "Static Site" on Render
+    // and remove this block entirely.
+    console.log("Production mode: API routes are active.");
 }
 
-// 6. Catch-all for undefined routes
 app.use((req, res, next) => {
     const error = new Error("Route not found");
     error.status = 404;
     next(error);
 });
 
-// 7. Global Error Handling Middleware
 app.use(errorHandler);
 
-// 8. Port Listener
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
