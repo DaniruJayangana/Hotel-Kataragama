@@ -100,4 +100,10 @@ router.put('/rooms/:id/status', authenticate, authorize(['Admin', 'Receptionist'
     res.status(200).json({ message: "Status updated successfully", room: updatedRoom });
 }));
 
+// NEW: GET COUNT OF ACTIVE BOOKINGS
+router.get('/count', authenticate, authorize(['Admin', 'Receptionist']), asyncHandler(async (req, res) => {
+    const count = await Booking.countDocuments({ booking_status: { $in: ['Confirmed', 'CheckedIn'] } });
+    res.status(200).json({ count });
+}));
+
 module.exports = router;

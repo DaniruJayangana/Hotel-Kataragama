@@ -152,7 +152,12 @@ router.get('/reports/revenue', authenticate, authorize(['Manager', 'Admin']), as
     res.status(200).json(report);
 }));
 
-
+// NEW: GET TOTAL UNPAID REVENUE
+router.get('/total', authenticate, authorize(['Manager', 'Admin']), asyncHandler(async (req, res) => {
+    const unpaidInvoices = await Invoice.find({ status: 'Unpaid' });
+    const total = unpaidInvoices.reduce((sum, inv) => sum + inv.grand_total, 0);
+    res.status(200).json({ total });
+}));
 
 
 module.exports = router;
