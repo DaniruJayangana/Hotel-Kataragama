@@ -16,6 +16,14 @@ export default function BookingsPage() {
 
   useEffect(() => { fetchBookings(); }, []);
 
+  const handleCheckIn = async (bookingId: string) => {
+    try {
+      await api.post(`/api/bookings/checkin/${bookingId}`);
+      alert("Guest checked in!");
+      fetchBookings();
+    } catch (err) { console.error(err); }
+  };
+
   const handleCheckOut = async (bookingId: string) => {
   try {
     const res = await api.post(`/api/bookings/checkout/${bookingId}`);
