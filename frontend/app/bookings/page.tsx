@@ -68,7 +68,18 @@ export default function BookingsPage() {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Active Bookings</h2>
+      {/* Header with Add Button */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Active Bookings</h2>
+        <a 
+          href="/bookings/create" 
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-semibold"
+        >
+          + Add New Booking
+        </a>
+      </div>
+
+      {/* Booking List */}
       {bookings.map((b: any) => (
         <div key={b._id} className="p-4 border rounded shadow mb-4 flex justify-between items-center bg-white">
           <div>
@@ -78,7 +89,6 @@ export default function BookingsPage() {
           </div>
 
           <div className="flex gap-2">
-            {/* Logic for Confirmed Bookings: Shows Check-in AND Cancel */}
             {b.booking_status === 'Confirmed' && (
               <>
                 <button 
@@ -96,7 +106,6 @@ export default function BookingsPage() {
               </>
             )}
 
-            {/* Logic for CheckedIn Bookings: Shows Check-out */}
             {b.booking_status === 'CheckedIn' && (
               <button 
                 onClick={() => handleCheckOut(b._id)}
