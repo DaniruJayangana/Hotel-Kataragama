@@ -36,6 +36,13 @@ export default function Dashboard() {
 
   if (loading) return <div className="p-6">Loading dashboard data...</div>;
 
+
+  // ADD THIS RIGHT BEFORE YOUR return( ... )
+{console.log("Current lowStock state:", lowStock)}
+<div className="p-4 bg-gray-100">
+  <p>Debug: {lowStock.length} items in lowStock array.</p>
+</div>
+
   return (
     <div className="p-6 space-y-6">
       {/* KPI Cards Grid */}
