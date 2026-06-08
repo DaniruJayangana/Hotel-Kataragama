@@ -51,13 +51,13 @@ export default function CreateBooking() {
     <div className="p-6 max-w-2xl mx-auto">
       <h2 className="text-2xl font-bold mb-6">Create New Reservation</h2>
       <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded shadow">
-        <input placeholder="Booking ID (e.g., BK001)" className="w-full p-2 border rounded" required onChange={(e) => setFormData({...formData, booking_id: e.target.value})} />
-        <input placeholder="Guest NIC" className="w-full p-2 border rounded" required onChange={(e) => setFormData({...formData, guest_nic: e.target.value})} />
+        <input placeholder="Booking ID (e.g., BK001)" className="w-full p-2 border rounded text-black placeholder-gray-500" required onChange={(e) => setFormData({...formData, booking_id: e.target.value})} />
+        <input placeholder="Guest NIC" className="w-full p-2 border rounded text-black placeholder-gray-500" required onChange={(e) => setFormData({...formData, guest_nic: e.target.value})} />
         <div className="grid grid-cols-2 gap-4">
-          <input placeholder="First Name" className="w-full p-2 border rounded" required onChange={(e) => setFormData({...formData, first_name: e.target.value})} />
-          <input placeholder="Last Name" className="w-full p-2 border rounded" required onChange={(e) => setFormData({...formData, last_name: e.target.value})} />
+          <input placeholder="First Name" className="w-full p-2 border rounded text-black placeholder-gray-500" required onChange={(e) => setFormData({...formData, first_name: e.target.value})} />
+          <input placeholder="Last Name" className="w-full p-2 border rounded text-black placeholder-gray-500" required onChange={(e) => setFormData({...formData, last_name: e.target.value})} />
         </div>
-        <input placeholder="Contact Number" className="w-full p-2 border rounded" required onChange={(e) => setFormData({...formData, contact_number: e.target.value})} />
+        <input placeholder="Contact Number" className="w-full p-2 border rounded text-black placeholder-gray-500" required onChange={(e) => setFormData({...formData, contact_number: e.target.value})} />
         
         <select className="w-full p-2 border rounded" required onChange={(e) => setFormData({...formData, room_id: e.target.value})}>
           <option value="">Select an Available Room</option>
@@ -67,11 +67,11 @@ export default function CreateBooking() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-sm">Check-in</label>
-            <input type="date" className="w-full p-2 border rounded" required onChange={(e) => setFormData({...formData, check_in_date: e.target.value})} />
+            <input type="date" className="w-full p-2 border rounded text-black placeholder-gray-500" required onChange={(e) => setFormData({...formData, check_in_date: e.target.value})} />
           </div>
           <div>
             <label className="text-sm">Check-out</label>
-            <input type="date" className="w-full p-2 border rounded" required onChange={(e) => setFormData({...formData, check_out_date: e.target.value})} />
+            <input type="date" className="w-full p-2 border rounded text-black placeholder-gray-500" required onChange={(e) => setFormData({...formData, check_out_date: e.target.value})} />
           </div>
         </div>
 
