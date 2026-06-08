@@ -7,33 +7,35 @@ export default function Dashboard() {
   const [lowStock, setLowStock] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-  console.log("DEBUG: useEffect triggered");
+ useEffect(() => {
+    // 1. Independent fetch for bookings and billing
+    const fetchStats = async () => {
+      try {
+        const [bookingsRes, billingRes] = await Promise.all([
+          api.get('/api/bookings/count'),
+          api.get('/api/billing/total')
+        ]);
+        setStats({ bookings: bookingsRes.data.count, billing: billingRes.data.total });
+      } catch (err) {
+        console.error("Error fetching stats:", err);
+      }
+    };
 
-  const fetchData = async () => {
-    try {
-      // 1. Fetch Bookings and Billing (These work, keep them)
-      const [bookingsRes, billingRes] = await Promise.all([
-        api.get('/api/bookings/count'),
-        api.get('/api/billing/total')
-      ]);
-      setStats({ bookings: bookingsRes.data.count, billing: billingRes.data.total });
-      console.log("DEBUG: Stats fetched");
+    // 2. Separate, independent fetch for low-stock
+    const fetchLowStock = async () => {
+      try {
+        console.log("Triggering low-stock request...");
+        const invRes = await api.get('/api/restaurant/inventory/low-stock');
+        console.log("Low-stock data received:", invRes.data);
+        setLowStock(invRes.data);
+      } catch (err) {
+        console.error("Error fetching low-stock:", err);
+      }
+    };
 
-      // 2. Fetch Inventory (The one that isn't showing)
-      // We are forcing this to run as a completely independent promise
-      console.log("DEBUG: Initiating low-stock request...");
-      const invRes = await api.get('/api/restaurant/inventory/low-stock');
-      console.log("DEBUG: Inventory request completed. Data:", invRes.data);
-      setLowStock(invRes.data);
-
-    } catch (err) {
-      console.error("DEBUG: ERROR CAUGHT IN FETCH:", err);
-    }
-  };
-
-  fetchData();
-}, []);
+    fetchStats();
+    fetchLowStock();
+  }, []);
 
   if (loading) return <div className="p-6">Loading dashboard data...</div>;
 
