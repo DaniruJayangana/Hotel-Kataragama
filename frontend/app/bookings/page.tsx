@@ -16,21 +16,39 @@ export default function BookingsPage() {
 
   useEffect(() => { fetchBookings(); }, []);
 
-  const handleCheckIn = async (bookingId: string) => {
-    try {
-      await api.post(`/api/bookings/checkin/${bookingId}`);
-      alert("Guest checked in!");
-      fetchBookings();
-    } catch (err) { console.error(err); }
-  };
-
   const handleCheckOut = async (bookingId: string) => {
-    try {
-      const res = await api.post(`/api/bookings/checkout/${bookingId}`);
-      alert(`Checkout successful! Final Bill: $${res.data.finalBill}`);
-      fetchBookings(); // Refresh to remove from active list
-    } catch (err) { console.error(err); }
-  };
+  try {
+    const res = await api.post(`/api/bookings/checkout/${bookingId}`);
+    
+    // Alert the staff
+    const confirmPrint = confirm(`Checkout successful! Final Bill: $${res.data.finalBill}. Do you want to print the invoice?`);
+    
+    if (confirmPrint) {
+      // Create a small hidden window for printing
+      const printWindow = window.open('', '_blank', 'width=600,height=600');
+      printWindow?.document.write(`
+        <html>
+          <head><title>Invoice</title></head>
+          <body style="font-family: sans-serif; padding: 20px;">
+            <h1>Hotel Kataragama - Invoice</h1>
+            <p>Booking ID: ${bookingId}</p>
+            <hr />
+            <p><strong>Room Charges:</strong> $${res.data.details.roomTotal}</p>
+            <p><strong>Restaurant Charges:</strong> $${res.data.details.restaurantTotal}</p>
+            <h2>Total Amount Due: $${res.data.finalBill}</h2>
+          </body>
+        </html>
+      `);
+      printWindow?.document.close();
+      printWindow?.print();
+    }
+    
+    fetchBookings();
+  } catch (err) { 
+    console.error(err); 
+    alert("Checkout failed.");
+  }
+};
 
   return (
     <div className="p-6">
