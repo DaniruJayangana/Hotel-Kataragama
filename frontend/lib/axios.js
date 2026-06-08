@@ -12,4 +12,17 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// NEW: Response Interceptor to catch Expired Tokens
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Token is expired or invalid
+      localStorage.removeItem('token');
+      window.location.href = '/login'; // Redirect to login
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
