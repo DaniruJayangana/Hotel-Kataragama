@@ -9,10 +9,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      console.log("DEBUG: Fetching data started..."); // Add this
       try {
         setLoading(true);
-
         // 1. Fetch main stats
         const [bookingsRes, billingRes] = await Promise.all([
           api.get('/api/bookings/count'),
@@ -20,32 +18,19 @@ export default function Dashboard() {
         ]);
         setStats({ bookings: bookingsRes.data.count, billing: billingRes.data.total });
 
-        // 2. Explicitly fetch low-stock 
-        // We use the full path just to be safe
+        // 2. Fetch low-stock
         const invRes = await api.get('/api/restaurant/inventory/low-stock');
-        console.log("Inventory API Response:", invRes.data);
         setLowStock(invRes.data);
-
       } catch (err) {
         console.error("Dashboard Fetch Error:", err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
-  // ... rest of your return JSX
-
   if (loading) return <div className="p-6">Loading dashboard data...</div>;
-
-
-  // ADD THIS RIGHT BEFORE YOUR return( ... )
-{console.log("Current lowStock state:", lowStock)}
-<div className="p-4 bg-gray-100">
-  <p>Debug: {lowStock.length} items in lowStock array.</p>
-</div>
 
   return (
     <div className="p-6 space-y-6">
