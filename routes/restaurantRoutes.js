@@ -114,9 +114,8 @@ router.get('/inventory/all', authenticate, authorize(['Manager', 'Admin']), asyn
 
 // NEW: GET LOW STOCK INVENTORY
 router.get('/inventory/low-stock', authenticate, authorize(['Manager', 'Admin']), asyncHandler(async (req, res) => {
-    // This assumes your InventoryItem model has 'current_stock' and 'reorder_level' fields
     const lowStockItems = await InventoryItem.find({ 
-        $expr: { $lt: ["$current_stock", "$reorder_level"] } 
+        $expr: { $lt: ["$quantity_in_stock", "$reorder_level"] } 
     });
     
     res.status(200).json(lowStockItems);
