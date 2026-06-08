@@ -7,32 +7,35 @@ export default function Dashboard() {
   const [lowStock, setLowStock] = useState([]);
   const [loading, setLoading] = useState(true);
 
- useEffect(() => {
-    const fetchDashboardData = async () => {
+  useEffect(() => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        
-        // 1. Fetch Stats
+
+        // 1. Fetch main stats
         const [bookingsRes, billingRes] = await Promise.all([
           api.get('/api/bookings/count'),
           api.get('/api/billing/total')
         ]);
         setStats({ bookings: bookingsRes.data.count, billing: billingRes.data.total });
 
-        // 2. SEPARATE CALL: Fetch Inventory (Debugging it specifically)
-        console.log("Attempting to fetch low stock...");
+        // 2. Explicitly fetch low-stock 
+        // We use the full path just to be safe
         const invRes = await api.get('/api/restaurant/inventory/low-stock');
-        console.log("Inventory Data received:", invRes.data);
+        console.log("Inventory API Response:", invRes.data);
         setLowStock(invRes.data);
 
       } catch (err) {
-        console.error("Dashboard Error:", err);
+        console.error("Dashboard Fetch Error:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchDashboardData();
+
+    fetchData();
   }, []);
+
+  // ... rest of your return JSX
 
   if (loading) return <div className="p-6">Loading dashboard data...</div>;
 
