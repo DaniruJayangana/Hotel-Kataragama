@@ -33,6 +33,10 @@ mongoose.connect(process.env.MONGODB_URI)
         process.exit(1); 
     });
 
+app.get('/', (req, res) => {
+    res.status(200).json({ status: "Hotel Kataragama API is live" });
+});
+
 // 4. API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
