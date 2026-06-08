@@ -108,26 +108,21 @@ router.get('/count', authenticate, authorize(['Admin', 'Receptionist']), asyncHa
 
 // POST /api/bookings/checkin/:id
 router.post('/checkin/:id', authenticate, authorize(['Admin', 'Manager', 'Receptionist']), asyncHandler(async (req, res) => {
-    
-    // Update booking_status to 'CheckedIn'
-    // Note: We use booking_status to match your schema exactly
-    const booking = await Booking.findByIdAndUpdate(
-        req.params.id, 
-        { 
-            booking_status: 'CheckedIn'
-        }, 
-        { new: true }
-    );
-
+    // 1. Find the booking first to get the room_id
+    const booking = await Booking.findById(req.params.id);
     if (!booking) {
         res.status(404);
         throw new Error("Booking not found");
     }
 
-    res.status(200).json({ 
-        message: "Guest checked in successfully", 
-        booking 
-    });
+    // 2. Update Booking status
+    booking.booking_status = 'CheckedIn';
+    await booking.save();
+
+    // 3. Optional: Update Room status to 'Occupied'
+    await Room.findByIdAndUpdate(booking.room_id, { status: 'Occupied' });
+
+    res.status(200).json({ message: "Guest checked in successfully", booking });
 }));
 
 module.exports = router;
