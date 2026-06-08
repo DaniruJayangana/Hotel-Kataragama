@@ -6,6 +6,7 @@ const { authenticate, authorize } = require('../middleware/authMiddleware');
 const Booking = require('../models/Booking');
 const Room = require('../models/Room');
 const Guest = require('../models/Guest');
+const RestaurantOrder = require('../models/RestaurantOrder');
 
 // 1. CREATE NEW RESERVATION
 // FIXED: Updated roles to match 'Admin' and 'Receptionist' from UserAccount.js
@@ -123,6 +124,51 @@ router.post('/checkin/:id', authenticate, authorize(['Admin', 'Manager', 'Recept
     await Room.findByIdAndUpdate(booking.room_id, { status: 'Occupied' });
 
     res.status(200).json({ message: "Guest checked in successfully", booking });
+}));
+
+// POST /api/bookings/checkout/:id
+router.post('/checkout/:id', authenticate, authorize(['Admin', 'Manager', 'Receptionist']), asyncHandler(async (req, res) => {
+    // 1. Fetch the booking
+    const booking = await Booking.findById(req.params.id).populate('room_id');
+    if (!booking) {
+        res.status(404);
+        throw new Error("Booking not found");
+    }
+
+    // 2. Fetch all unpaid restaurant charges for this specific booking
+    // We use the booking._id directly
+    const restaurantBills = await RestaurantOrder.find({ 
+        booking_id: booking._id, 
+        order_status: { $ne: 'Paid' } // Find anything that isn't paid
+    });
+    
+    const restaurantTotal = restaurantBills.reduce((acc, order) => acc + order.total_amount, 0);
+
+    // 3. Calculate Room cost (Simplified: days * price)
+    const timeDiff = new Date(booking.check_out_date).getTime() - new Date(booking.check_in_date).getTime();
+    const nights = Math.max(1, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+    const roomTotal = nights * (booking.room_id.room_type_id?.base_price || 0);
+
+    const finalBill = roomTotal + restaurantTotal;
+
+    // 4. Update statuses
+    booking.booking_status = 'CheckedOut';
+    await booking.save();
+    
+    // Release the room
+    await Room.findByIdAndUpdate(booking.room_id, { status: 'Available' });
+    
+    // Mark associated restaurant orders as 'Paid'
+    await RestaurantOrder.updateMany(
+        { booking_id: booking._id, order_status: { $ne: 'Paid' } }, 
+        { order_status: 'Paid' }
+    );
+
+    res.status(200).json({ 
+        message: "Checkout successful", 
+        finalBill,
+        details: { roomTotal, restaurantTotal } 
+    });
 }));
 
 module.exports = router;
