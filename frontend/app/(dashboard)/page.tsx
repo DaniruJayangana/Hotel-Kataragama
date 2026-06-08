@@ -8,26 +8,19 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // 1. Fetch main stats
-        const [bookingsRes, billingRes] = await Promise.all([
-          api.get('/api/bookings/count'),
-          api.get('/api/billing/total')
-        ]);
-        setStats({ bookings: bookingsRes.data.count, billing: billingRes.data.total });
+    // 1. Force a simple test call
+    api.get('/api/restaurant/inventory/low-stock')
+      .then((res) => {
+        console.log("SUCCESS! Inventory Data:", res.data);
+        setLowStock(res.data);
+      })
+      .catch((err) => {
+        console.error("CRITICAL ERROR: Request failed", err);
+      });
 
-        // 2. Fetch low-stock
-        const invRes = await api.get('/api/restaurant/inventory/low-stock');
-        setLowStock(invRes.data);
-      } catch (err) {
-        console.error("Dashboard Fetch Error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    // 2. Fetch other stats
+    api.get('/api/bookings/count').then(res => setStats(prev => ({...prev, bookings: res.data.count})));
+    api.get('/api/billing/total').then(res => setStats(prev => ({...prev, billing: res.data.total})));
   }, []);
 
   if (loading) return <div className="p-6">Loading dashboard data...</div>;
