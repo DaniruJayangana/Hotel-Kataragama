@@ -9,6 +9,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
+      console.log("DEBUG: Fetching data started..."); // Add this
       try {
         setLoading(true);
 
