@@ -8,20 +8,32 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Force a simple test call
-    api.get('/api/restaurant/inventory/low-stock')
-      .then((res) => {
-        console.log("SUCCESS! Inventory Data:", res.data);
-        setLowStock(res.data);
-      })
-      .catch((err) => {
-        console.error("CRITICAL ERROR: Request failed", err);
-      });
+  console.log("DEBUG: useEffect triggered");
 
-    // 2. Fetch other stats
-    api.get('/api/bookings/count').then(res => setStats(prev => ({...prev, bookings: res.data.count})));
-    api.get('/api/billing/total').then(res => setStats(prev => ({...prev, billing: res.data.total})));
-  }, []);
+  const fetchData = async () => {
+    try {
+      // 1. Fetch Bookings and Billing (These work, keep them)
+      const [bookingsRes, billingRes] = await Promise.all([
+        api.get('/api/bookings/count'),
+        api.get('/api/billing/total')
+      ]);
+      setStats({ bookings: bookingsRes.data.count, billing: billingRes.data.total });
+      console.log("DEBUG: Stats fetched");
+
+      // 2. Fetch Inventory (The one that isn't showing)
+      // We are forcing this to run as a completely independent promise
+      console.log("DEBUG: Initiating low-stock request...");
+      const invRes = await api.get('/api/restaurant/inventory/low-stock');
+      console.log("DEBUG: Inventory request completed. Data:", invRes.data);
+      setLowStock(invRes.data);
+
+    } catch (err) {
+      console.error("DEBUG: ERROR CAUGHT IN FETCH:", err);
+    }
+  };
+
+  fetchData();
+}, []);
 
   if (loading) return <div className="p-6">Loading dashboard data...</div>;
 
