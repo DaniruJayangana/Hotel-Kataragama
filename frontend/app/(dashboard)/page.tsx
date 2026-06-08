@@ -53,20 +53,21 @@ export default function Dashboard() {
       </div>
 
       {/* Low Stock Alert Section */}
-      {lowStock.length > 0 && (
-        <div className="p-6 bg-red-50 rounded-lg shadow border border-red-200">
-          <h2 className="text-red-700 font-bold flex items-center">
-            ⚠️ Low Stock Alert ({lowStock.length} items)
-          </h2>
-          <ul className="mt-2 text-sm text-red-600 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {lowStock.map((item: any) => (
-              <li key={item._id} className="bg-white p-2 rounded border border-red-100">
-                <strong>{item.item_name}</strong>: {item.quantity_in_stock} left
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+{lowStock.length > 0 && (
+  <div className="mt-8 p-6 bg-red-900 text-white rounded-lg shadow border border-red-700">
+    <h2 className="text-xl font-bold flex items-center">
+      ⚠️ Low Stock Alert ({lowStock.length} items)
+    </h2>
+    <ul className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {lowStock.map((item: any) => (
+        <li key={item._id} className="bg-red-800 p-3 rounded">
+          <span className="font-bold">{item.item_name}</span>
+          <p className="text-sm">Current: {item.quantity_in_stock} | Reorder: {item.reorder_level}</p>
+        </li>
+      ))}
+    </ul>
+  </div>
+)}
     </div>
   );
 }
