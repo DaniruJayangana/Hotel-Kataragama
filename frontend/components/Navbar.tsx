@@ -12,6 +12,7 @@ export default function Navbar() {
     if (token) {
       // Decode the payload part of the JWT
       const payload = JSON.parse(atob(token.split('.')[1]));
+      console.log("Decoded Token Payload:", payload);
       setRole(payload.role); // 'role' matches the key from jwt.sign in authRoutes.js
     }
   }, []);
@@ -26,8 +27,8 @@ export default function Navbar() {
       <Link href="/dashboard">Dashboard</Link>
       
       {/* Show link ONLY if the role is Admin */}
-      {role === 'Admin' && (
-        <Link href="/admin/register" style={{ color: 'blue' }}>
+      {role && role.toLowerCase() === 'admin' && (
+        <Link href="/admin/register">
           Register New Staff
         </Link>
       )}
