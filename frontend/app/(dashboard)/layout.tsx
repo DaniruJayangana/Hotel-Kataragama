@@ -1,5 +1,9 @@
+import AuthGuard from '../../components/AuthGuard';
+
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
+    <AuthGuard>
     <div className="flex min-h-screen">
       <nav className="w-64 bg-slate-900 text-white p-6">
         <h1 className="text-xl font-bold mb-8">Hotel Kataragama</h1>
@@ -12,5 +16,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </nav>
       <main className="flex-1 p-8 bg-gray-50">{children}</main>
     </div>
+    </AuthGuard>
   );
 }

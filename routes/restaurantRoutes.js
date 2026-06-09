@@ -10,7 +10,7 @@ const InventoryItem = require('../models/InventoryItem');
 
 // 1. PLACE A NEW RESTAURANT ORDER
 // Secure: Staff can place orders
-router.post('/order/create', authenticate, authorize(['Manager', 'Admin']), asyncHandler(async (req, res) => {
+router.post('/order/create', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const { booking_id, table_number, items } = req.body;
 
     if (!items || items.length === 0) {
@@ -58,7 +58,7 @@ router.post('/order/create', authenticate, authorize(['Manager', 'Admin']), asyn
 }));
 
 // 2. UPDATE KITCHEN ORDER STATUS
-router.put('/order/:id/status', authenticate, authorize(['Manager', 'Admin']), asyncHandler(async (req, res) => {
+router.put('/order/:id/status', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const order = await RestaurantOrder.findByIdAndUpdate(
         req.params.id, 
         { order_status: req.body.status }, 
@@ -68,13 +68,13 @@ router.put('/order/:id/status', authenticate, authorize(['Manager', 'Admin']), a
 }));
 
 // 3. GET ACTIVE KDS QUEUE
-router.get('/orders/active', authenticate, authorize(['Manager', 'Admin']), asyncHandler(async (req, res) => {
+router.get('/orders/active', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const activeOrders = await RestaurantOrder.find({ order_status: { $in: ['Pending', 'Cooking'] } });
     res.status(200).json(activeOrders);
 }));
 
 // 4. GET TABLES WITH ACTIVE ORDERS
-router.get('/orders/active-tables', authenticate, authorize(['Manager', 'Admin']), asyncHandler(async (req, res) => {
+router.get('/orders/active-tables', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const activeTables = await RestaurantOrder.distinct('table_number', { 
         order_status: { $in: ['Pending', 'Cooking', 'Served'] } 
     });
@@ -84,7 +84,7 @@ router.get('/orders/active-tables', authenticate, authorize(['Manager', 'Admin']
 }));
 
 // 5. GET UNPAID ORDERS FOR ROOM OR TABLE
-router.get('/orders/unpaid/:roomOrTable', authenticate, authorize(['Manager', 'Admin']), asyncHandler(async (req, res) => {
+router.get('/orders/unpaid/:roomOrTable', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const unpaidOrders = await RestaurantOrder.find({
         table_number: req.params.roomOrTable,
         order_status: { $in: ['Pending', 'Cooking', 'Served'] }
@@ -94,7 +94,7 @@ router.get('/orders/unpaid/:roomOrTable', authenticate, authorize(['Manager', 'A
 }));
 
 // 6. BULK MARK ORDERS AS PAID
-router.put('/orders/pay-room/:roomOrTable', authenticate, authorize(['Manager', 'Admin']), asyncHandler(async (req, res) => {
+router.put('/orders/pay-room/:roomOrTable', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const result = await RestaurantOrder.updateMany(
         {
             table_number: req.params.roomOrTable,
@@ -107,13 +107,13 @@ router.put('/orders/pay-room/:roomOrTable', authenticate, authorize(['Manager', 
 }));
 
 // 7. GET INVENTORY
-router.get('/inventory/all', authenticate, authorize(['Manager', 'Admin']), asyncHandler(async (req, res) => {
+router.get('/inventory/all', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const allItems = await InventoryItem.find({}).populate('supplier_id', 'supplier_name');
     res.status(200).json(allItems);
 }));
 
 // NEW: GET LOW STOCK INVENTORY
-router.get('/inventory/low-stock', authenticate, authorize(['Manager', 'Admin']), asyncHandler(async (req, res) => {
+router.get('/inventory/low-stock', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const lowStockItems = await InventoryItem.find({ 
         $expr: { $lt: ["$quantity_in_stock", "$reorder_level"] } 
     });

@@ -5,7 +5,10 @@ const jwt = require('jsonwebtoken');
 const asyncHandler = require('../middleware/asyncHandler'); // Import helper
 const UserAccount = require('../models/UserAccount');
 const Staff = require('../models/Staff');
-const authorize = require('../middleware/authMiddleware');
+//const authorize = require('../middleware/authMiddleware');
+// We import the authenticate middleware here, though we only use it for routes 
+// that require a user to be already logged in (like a potential 'get profile' route).
+const { authenticate } = require('../middleware/authMiddleware');
 
 // 1. REGISTER NEW STAFF & ACCOUNT
 router.post('/register', asyncHandler(async (req, res) => {

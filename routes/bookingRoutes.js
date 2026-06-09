@@ -10,7 +10,7 @@ const RestaurantOrder = require('../models/RestaurantOrder');
 
 // 1. CREATE NEW RESERVATION
 // FIXED: Updated roles to match 'Admin' and 'Receptionist' from UserAccount.js
-router.post('/create', authenticate, authorize(['Admin', 'Receptionist']), asyncHandler(async (req, res) => {
+router.post('/create', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const { booking_id, guest_nic, first_name, last_name, email, contact_number, room_id, check_in_date, check_out_date } = req.body;
 
     const session = await Booking.startSession();
@@ -64,7 +64,7 @@ router.post('/create', authenticate, authorize(['Admin', 'Receptionist']), async
 
 // 2. GET LIVE HOUSE OCCUPANCY DASHBOARD
 // FIXED: Updated roles to match 'Admin' and 'Receptionist'
-router.get('/dashboard', authenticate, authorize(['Admin', 'Receptionist']), asyncHandler(async (req, res) => {
+router.get('/dashboard', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const activeBookings = await Booking.find({ booking_status: { $in: ['Confirmed', 'CheckedIn'] } })
         .populate('guest_id', 'first_name last_name contact_number')
         .populate({
@@ -77,14 +77,14 @@ router.get('/dashboard', authenticate, authorize(['Admin', 'Receptionist']), asy
 
 // 3. GET ALL ROOMS
 // FIXED: Updated roles to match 'Admin' and 'Receptionist'
-router.get('/rooms', authenticate, authorize(['Admin', 'Receptionist']), asyncHandler(async (req, res) => {
+router.get('/rooms', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const allRooms = await Room.find({});
     res.status(200).json(allRooms);
 }));
 
 // 4. UPDATE ROOM STATUS
 // FIXED: Updated roles to match 'Admin' and 'Receptionist'
-router.put('/rooms/:id/status', authenticate, authorize(['Admin', 'Receptionist']), asyncHandler(async (req, res) => {
+router.put('/rooms/:id/status', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const { status } = req.body;
     const updatedRoom = await Room.findByIdAndUpdate(
         req.params.id,
@@ -102,13 +102,13 @@ router.put('/rooms/:id/status', authenticate, authorize(['Admin', 'Receptionist'
 }));
 
 // NEW: GET COUNT OF ACTIVE BOOKINGS
-router.get('/count', authenticate, authorize(['Admin', 'Receptionist']), asyncHandler(async (req, res) => {
+router.get('/count', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const count = await Booking.countDocuments({ booking_status: { $in: ['Confirmed', 'CheckedIn'] } });
     res.status(200).json({ count });
 }));
 
 // POST /api/bookings/checkin/:id
-router.post('/checkin/:id', authenticate, authorize(['Admin', 'Manager', 'Receptionist']), asyncHandler(async (req, res) => {
+router.post('/checkin/:id', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     // 1. Find the booking first to get the room_id
     const booking = await Booking.findById(req.params.id);
     if (!booking) {
@@ -127,7 +127,7 @@ router.post('/checkin/:id', authenticate, authorize(['Admin', 'Manager', 'Recept
 }));
 
 // POST /api/bookings/checkout/:id
-router.post('/checkout/:id', authenticate, authorize(['Admin', 'Manager', 'Receptionist']), asyncHandler(async (req, res) => {
+router.post('/checkout/:id', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     // 1. Fetch the booking
     const booking = await Booking.findById(req.params.id).populate('room_id');
     if (!booking) {
@@ -172,7 +172,7 @@ router.post('/checkout/:id', authenticate, authorize(['Admin', 'Manager', 'Recep
 }));
 
 // POST /api/bookings/cancel/:id
-router.post('/cancel/:id', authenticate, authorize(['Admin', 'Manager', 'Receptionist']), asyncHandler(async (req, res) => {
+router.post('/cancel/:id', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     // 1. Find the booking
     const booking = await Booking.findById(req.params.id);
     if (!booking) throw new Error("Booking not found");

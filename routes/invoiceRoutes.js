@@ -7,7 +7,7 @@ const Booking = require('../models/Booking');
 
 // POST: Generate a new invoice
 // Protected: Only Admin/Receptionist can generate bills
-router.post('/generate', authenticate, authorize(['Admin', 'Receptionist']), asyncHandler(async (req, res) => {
+router.post('/generate', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const { 
         invoice_id, 
         booking_id, 
@@ -49,7 +49,8 @@ router.post('/generate', authenticate, authorize(['Admin', 'Receptionist']), asy
 }));
 
 // GET: Fetch an invoice by ID
-router.get('/:id', authenticate, asyncHandler(async (req, res) => {
+// Protected: Only Admin can view invoices during testing
+router.get('/:id', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const invoice = await Invoice.findById(req.params.id);
     if (!invoice) {
         const error = new Error("Invoice not found");

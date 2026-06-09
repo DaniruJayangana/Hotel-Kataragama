@@ -15,7 +15,7 @@ const RoomType = require('../models/RoomType');
 
 
 // NEW: Added Dashboard Route
-router.get('/dashboard', authenticate, authorize(['Manager', 'Admin']), asyncHandler(async (req, res) => {
+router.get('/dashboard', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     res.status(200).json({ 
         message: "Welcome to the secure billing portal!",
         user: req.user.username // Confirms who is logged in
@@ -23,7 +23,7 @@ router.get('/dashboard', authenticate, authorize(['Manager', 'Admin']), asyncHan
 }));
 
 // 1. GENERATE MASTER INVOICE
-router.post('/invoice/generate', authenticate, authorize(['Manager', 'Admin']), asyncHandler(async (req, res) => {
+router.post('/invoice/generate', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const { invoice_id, booking_id } = req.body;
 
     const booking = await Booking.findById(booking_id).populate({
@@ -69,7 +69,7 @@ router.post('/invoice/generate', authenticate, authorize(['Manager', 'Admin']), 
 }));
 
 // 2. PROCESS FINAL CHECKOUT
-router.post('/checkout', authenticate, authorize(['Manager', 'Admin']), asyncHandler(async (req, res) => {
+router.post('/checkout', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const { payment_id, invoice_id, payment_method } = req.body;
 
     const session = await Invoice.startSession();
@@ -117,7 +117,7 @@ router.post('/checkout', authenticate, authorize(['Manager', 'Admin']), asyncHan
 }));
 
 // 3. GET HISTORICAL REVENUE REPORT
-router.get('/reports/revenue', authenticate, authorize(['Manager', 'Admin']), asyncHandler(async (req, res) => {
+router.get('/reports/revenue', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
 
     const report = await Payment.aggregate([
@@ -153,7 +153,7 @@ router.get('/reports/revenue', authenticate, authorize(['Manager', 'Admin']), as
 }));
 
 // NEW: GET TOTAL UNPAID REVENUE
-router.get('/total', authenticate, authorize(['Manager', 'Admin']), asyncHandler(async (req, res) => {
+router.get('/total', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
     const unpaidInvoices = await Invoice.find({ status: 'Unpaid' });
     const total = unpaidInvoices.reduce((sum, inv) => sum + inv.grand_total, 0);
     res.status(200).json({ total });
