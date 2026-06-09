@@ -1,9 +1,10 @@
 import AuthGuard from '../../components/AuthGuard';
-
+import Navbar from '../../components/Navbar';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
+    <Navbar /> {/* This will now appear on all dashboard pages */}
     <div className="flex min-h-screen">
       <nav className="w-64 bg-slate-900 text-white p-6">
         <h1 className="text-xl font-bold mb-8">Hotel Kataragama</h1>
