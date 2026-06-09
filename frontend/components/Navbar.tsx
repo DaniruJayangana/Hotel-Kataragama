@@ -13,13 +13,8 @@ export default function Navbar() {
   };
 
   return (
-    <nav style={{ padding: '1rem', borderBottom: '1px solid #ccc', display: 'flex', justifyContent: 'flex-end' }}>
-      <button 
-        onClick={handleLogout} 
-        style={{ padding: '8px 16px', cursor: 'pointer' }}
-      >
-        Logout
-      </button>
+    <nav style={{ padding: '1rem', background: '#f4f4f4', display: 'flex', justifyContent: 'flex-end' }}>
+      <button onClick={handleLogout}>Logout</button>
     </nav>
   );
 }
