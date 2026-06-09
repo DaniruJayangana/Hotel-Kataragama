@@ -77,4 +77,21 @@ router.post('/login', asyncHandler(async (req, res) => {
     });
 }));
 
+// Placeholder for Password Recovery
+router.post('/forgot-password', asyncHandler(async (req, res) => {
+    const { username } = req.body;
+    const user = await UserAccount.findOne({ username });
+    
+    if (!user) {
+        return res.status(404).json({ message: "User not found." });
+    }
+
+    // NOTE: To implement this later, you will:
+    // 1. Generate a reset token
+    // 2. Save token/expiry to user document
+    // 3. Send email via Nodemailer
+    res.status(200).json({ message: "Recovery email logic will be implemented here." });
+}));
+
+
 module.exports = router;
