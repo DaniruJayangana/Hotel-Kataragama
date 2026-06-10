@@ -149,4 +149,11 @@ router.get('/inventory/low-stock', authenticate, authorize(['Admin']), asyncHand
     res.status(200).json(lowStockItems);
 }));
 
+// Add this to restaurantRoutes.js
+router.get('/menu', asyncHandler(async (req, res) => {
+    const menuItems = await MenuItem.find({ is_available: true });
+    res.status(200).json(menuItems);
+}));
+
+
 module.exports = router;
