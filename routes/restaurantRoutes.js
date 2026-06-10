@@ -10,7 +10,7 @@ const InventoryItem = require('../models/InventoryItem');
 
 // 1. PLACE A NEW RESTAURANT ORDER
 // Secure: Staff can place orders
-router.post('/order/create', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
+router.post('/order/create', authenticate, authorize(['Admin', 'Receptionist']), asyncHandler(async (req, res) => {
     const { booking_id, table_number, items } = req.body;
 
     if (!items || items.length === 0) {
@@ -19,42 +19,70 @@ router.post('/order/create', authenticate, authorize(['Admin']), asyncHandler(as
         throw error;
     }
 
-    const orderCount = await RestaurantOrder.countDocuments();
-    const generatedOrderId = `ORD${1001 + orderCount}`;
+    const session = await RestaurantOrder.startSession();
+    session.startTransaction();
 
-    let totalCalculatedAmount = 0;
-    const processedOrderItems = [];
+    try {
+        const orderCount = await RestaurantOrder.countDocuments();
+        const generatedOrderId = `ORD${1001 + orderCount}`;
 
-    for (const element of items) {
-        const menuItem = await MenuItem.findById(element.menu_item_id);
-        if (!menuItem || !menuItem.is_available) {
-            const error = new Error(`Item not found or sold out.`);
-            error.status = 400;
-            throw error;
+        let totalCalculatedAmount = 0;
+        const processedOrderItems = [];
+
+        for (const element of items) {
+            const menuItem = await MenuItem.findById(element.menu_item_id).session(session);
+            if (!menuItem || !menuItem.is_available) {
+                throw new Error(`Item ${element.menu_item_id} not found or sold out.`);
+            }
+
+            // 1. DEDUCT INVENTORY
+            if (menuItem.recipe && menuItem.recipe.length > 0) {
+                for (const ingredient of menuItem.recipe) {
+                    const invItem = await InventoryItem.findById(ingredient.inventory_item_id).session(session);
+                    
+                    if (!invItem || invItem.quantity_in_stock < (ingredient.quantity_required * element.quantity)) {
+                        throw new Error(`Insufficient stock for ingredient: ${invItem?.item_name || ingredient.inventory_item_id}`);
+                    }
+                    
+                    // Subtract from stock
+                    invItem.quantity_in_stock -= (ingredient.quantity_required * element.quantity);
+                    await invItem.save({ session });
+                }
+            }
+
+            // 2. PREPARE ORDER DATA
+            const itemSubtotal = menuItem.price * element.quantity;
+            totalCalculatedAmount += itemSubtotal;
+
+            processedOrderItems.push({
+                order_id: generatedOrderId,
+                menu_item_id: menuItem._id,
+                quantity: element.quantity,
+                subtotal: itemSubtotal
+            });
         }
 
-        const itemSubtotal = menuItem.price * element.quantity;
-        totalCalculatedAmount += itemSubtotal;
+        // 3. SAVE ORDER AND ITEMS
+        await RestaurantOrder.create([{
+            _id: generatedOrderId,
+            booking_id: booking_id || null,
+            table_number,
+            total_amount: totalCalculatedAmount,
+            order_status: 'Pending'
+        }], { session });
 
-        processedOrderItems.push({
-            order_id: generatedOrderId,
-            menu_item_id: menuItem._id,
-            quantity: element.quantity,
-            subtotal: itemSubtotal
-        });
+        await OrderItem.insertMany(processedOrderItems, { session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        res.status(201).json({ message: "Order placed and inventory updated!", order_id: generatedOrderId });
+
+    } catch (err) {
+        await session.abortTransaction();
+        session.endSession();
+        throw err;
     }
-
-    const newOrder = await RestaurantOrder.create({
-        _id: generatedOrderId,
-        booking_id: booking_id || null,
-        table_number,
-        total_amount: totalCalculatedAmount,
-        order_status: 'Pending'
-    });
-
-    await OrderItem.insertMany(processedOrderItems);
-
-    res.status(201).json({ message: "Order placed!", order_id: generatedOrderId });
 }));
 
 // 2. UPDATE KITCHEN ORDER STATUS

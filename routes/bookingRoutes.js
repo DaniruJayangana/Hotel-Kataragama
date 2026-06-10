@@ -36,6 +36,24 @@ router.post('/create', authenticate, authorize(['Admin']), asyncHandler(async (r
             error.status = 400;
             throw error;
         }
+        // Check if any active booking overlaps with the requested dates
+        const overlappingBooking = await Booking.findOne({
+            room_id: room_id,
+            booking_status: { $nin: ['Cancelled', 'CheckedOut'] },
+            $or: [
+                { 
+                    check_in_date: { $lt: new Date(check_out_date) }, 
+                    check_out_date: { $gt: new Date(check_in_date) } 
+                }
+            ]
+        }).session(session);
+
+        if (overlappingBooking) {
+            const error = new Error("Room is already booked for these dates.");
+            error.status = 400;
+            throw error;
+        }
+
 
         // C. Save the new booking
         const newBooking = await Booking.create([{
@@ -108,67 +126,41 @@ router.get('/count', authenticate, authorize(['Admin']), asyncHandler(async (req
 }));
 
 // POST /api/bookings/checkin/:id
-router.post('/checkin/:id', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
-    // 1. Find the booking first to get the room_id
+// 3. CHECK-IN (Updates to 'CheckedIn')
+router.post('/checkin/:id', authenticate, authorize(['Admin', 'Receptionist']), asyncHandler(async (req, res) => {
     const booking = await Booking.findById(req.params.id);
-    if (!booking) {
-        res.status(404);
-        throw new Error("Booking not found");
-    }
+    if (!booking) throw new Error("Booking not found");
 
-    // 2. Update Booking status
     booking.booking_status = 'CheckedIn';
     await booking.save();
-
-    // 3. Optional: Update Room status to 'Occupied'
     await Room.findByIdAndUpdate(booking.room_id, { status: 'Occupied' });
 
-    res.status(200).json({ message: "Guest checked in successfully", booking });
+    res.status(200).json({ message: "Guest checked in", booking });
 }));
 
 // POST /api/bookings/checkout/:id
-router.post('/checkout/:id', authenticate, authorize(['Admin']), asyncHandler(async (req, res) => {
-    // 1. Fetch the booking
+// 4. CHECK-OUT (Updates to 'Cleaning')
+router.post('/checkout/:id', authenticate, authorize(['Admin', 'Receptionist']), asyncHandler(async (req, res) => {
     const booking = await Booking.findById(req.params.id).populate('room_id');
-    if (!booking) {
-        res.status(404);
-        throw new Error("Booking not found");
-    }
+    if (!booking) throw new Error("Booking not found");
 
-    // 2. Fetch all unpaid restaurant charges for this specific booking
-    // We use the booking._id directly
-    const restaurantBills = await RestaurantOrder.find({ 
-        booking_id: booking._id, 
-        order_status: { $ne: 'Paid' } // Find anything that isn't paid
-    });
-    
+    // Calculate costs
+    const restaurantBills = await RestaurantOrder.find({ booking_id: booking._id, order_status: { $ne: 'Paid' } });
     const restaurantTotal = restaurantBills.reduce((acc, order) => acc + order.total_amount, 0);
-
-    // 3. Calculate Room cost (Simplified: days * price)
-    const timeDiff = new Date(booking.check_out_date).getTime() - new Date(booking.check_in_date).getTime();
-    const nights = Math.max(1, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+    
+    const nights = Math.max(1, Math.ceil((new Date(booking.check_out_date) - new Date(booking.check_in_date)) / (1000 * 3600 * 24)));
     const roomTotal = nights * (booking.room_id.room_type_id?.base_price || 0);
 
-    const finalBill = roomTotal + restaurantTotal;
-
-    // 4. Update statuses
+    // Update statuses
     booking.booking_status = 'CheckedOut';
     await booking.save();
     
-    // Release the room
-    await Room.findByIdAndUpdate(booking.room_id, { status: 'Available' });
+    // NEW: Set to 'Cleaning' so Housekeeping knows to check it
+    await Room.findByIdAndUpdate(booking.room_id, { status: 'Cleaning' });
     
-    // Mark associated restaurant orders as 'Paid'
-    await RestaurantOrder.updateMany(
-        { booking_id: booking._id, order_status: { $ne: 'Paid' } }, 
-        { order_status: 'Paid' }
-    );
+    await RestaurantOrder.updateMany({ booking_id: booking._id }, { order_status: 'Paid' });
 
-    res.status(200).json({ 
-        message: "Checkout successful", 
-        finalBill,
-        details: { roomTotal, restaurantTotal } 
-    });
+    res.status(200).json({ message: "Checkout successful", finalBill: roomTotal + restaurantTotal });
 }));
 
 // POST /api/bookings/cancel/:id

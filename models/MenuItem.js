@@ -5,7 +5,19 @@ const menuItemSchema = new mongoose.Schema({
     item_name: { type: String, required: true },
     category: { type: String, enum: ['Food', 'Beverage', 'Dessert', 'Extra'], required: true },
     price: { type: Number, required: true },
-    is_available: { type: Boolean, default: true }
+    is_available: { type: Boolean, default: true },
+    // NEW: Recipe definition to link MenuItems to InventoryItems
+    recipe: [{
+        inventory_item_id: { 
+            type: String, 
+            ref: 'InventoryItem', 
+            required: true 
+        },
+        quantity_required: { 
+            type: Number, 
+            required: true 
+        }
+    }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('MenuItem', menuItemSchema);
