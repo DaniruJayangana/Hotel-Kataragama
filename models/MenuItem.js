@@ -6,7 +6,9 @@ const menuItemSchema = new mongoose.Schema({
     category: { type: String, enum: ['Food', 'Beverage', 'Dessert', 'Extra'], required: true },
     price: { type: Number, required: true },
     is_available: { type: Boolean, default: true },
-    // NEW: Recipe definition to link MenuItems to InventoryItems
+    // Added image_url to support visual catalog in the frontend
+    image_url: { type: String, default: '' }, 
+    // Recipe definition to link MenuItems to InventoryItems
     recipe: [{
         inventory_item_id: { 
             type: String, 

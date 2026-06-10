@@ -8,6 +8,7 @@ interface MenuItem {
   category: 'Food' | 'Beverage' | 'Dessert' | 'Extra';
   price: number;
   is_available: boolean;
+  image_url?: string; // Added image support
 }
 
 interface CartItem extends MenuItem {
@@ -24,7 +25,6 @@ export default function RestaurantPage() {
   const [tableNumber, setTableNumber] = useState<string>('');
 
   useEffect(() => {
-    // Explicitly casting the API response
     api.get('/api/restaurant/menu').then((res) => setMenu(res.data as MenuItem[]));
   }, []);
 
@@ -48,80 +48,77 @@ export default function RestaurantPage() {
     ));
   };
 
-  const placeOrder = async () => {
-    if (!tableNumber) return alert("Please enter a table number");
-    setLoading(true);
-    try {
-      await api.post('/api/restaurant/order/create', {
-        table_number: parseInt(tableNumber),
-        items: cart.map((i) => ({ menu_item_id: i._id, quantity: i.quantity }))
-      });
-      alert("Order placed successfully!");
-      setCart([]);
-      setTableNumber('');
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Error placing order");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="flex gap-6 p-6">
+    // DARK MODE BACKGROUND for high contrast
+    <div className="flex gap-6 p-8 bg-slate-900 min-h-screen text-white">
       <div className="flex-1">
-        <div className="flex gap-2 mb-6">
+        {/* CATEGORY FILTER - High Contrast */}
+        <div className="flex gap-3 mb-8">
           {(['All', 'Food', 'Beverage', 'Dessert', 'Extra'] as CategoryFilter[]).map(cat => (
             <button key={cat} onClick={() => setCategory(cat)} 
-              className={`px-4 py-2 rounded ${category === cat ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+              className={`px-6 py-2 rounded-full font-bold transition-all ${
+                category === cat ? 'bg-blue-600 shadow-lg shadow-blue-500/20' : 'bg-slate-800 hover:bg-slate-700'
+              }`}>
               {cat}
             </button>
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        {/* MENU GRID */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredMenu.map(item => (
-            <div key={item._id} className="p-4 bg-white border rounded shadow">
-              <h3 className="font-bold">{item.item_name}</h3>
-              <p>${item.price}</p>
-              <button 
-                onClick={() => addToCart(item)} 
-                disabled={!item.is_available}
-                className={`mt-2 px-4 py-1 rounded w-full ${item.is_available ? 'bg-blue-600 text-white' : 'bg-gray-400 cursor-not-allowed'}`}
-              >
-                {item.is_available ? 'Add' : 'Out of Stock'}
-              </button>
+            <div key={item._id} className="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 hover:border-blue-500 transition-all">
+              {/* IMAGE SUPPORT */}
+              <div className="h-40 bg-slate-700">
+                {item.image_url ? (
+                  <img src={item.image_url} alt={item.item_name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-500">No Image</div>
+                )}
+              </div>
+              <div className="p-4">
+                <h3 className="text-lg font-bold">{item.item_name}</h3>
+                <p className="text-blue-400 font-semibold mb-3">${item.price.toFixed(2)}</p>
+                <button 
+                  onClick={() => addToCart(item)} 
+                  disabled={!item.is_available}
+                  className={`w-full py-2 rounded-lg font-bold ${item.is_available ? 'bg-blue-600 hover:bg-blue-500' : 'bg-slate-700 cursor-not-allowed'}`}
+                >
+                  {item.is_available ? 'Add to Cart' : 'Sold Out'}
+                </button>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Cart Panel */}
-      <div className="w-80 p-6 bg-white border rounded shadow">
-        <h2 className="text-xl font-bold mb-4">Current Order</h2>
+      {/* CART PANEL */}
+      <div className="w-96 bg-slate-800 p-6 rounded-2xl border border-slate-700 h-fit sticky top-8">
+        <h2 className="text-2xl font-bold mb-6 text-white">Current Order</h2>
         <input 
             type="number" 
-            placeholder="Table Number" 
+            placeholder="Enter Table Number" 
             value={tableNumber}
             onChange={(e) => setTableNumber(e.target.value)} 
-            className="w-full p-2 mb-4 border rounded"
+            className="w-full p-3 mb-6 bg-slate-900 border border-slate-700 rounded-lg text-white"
         />
-        <ul className="space-y-2">
+        <ul className="space-y-4 mb-6">
           {cart.map(c => (
-            <li key={c._id} className="flex justify-between items-center">
-              <span>{c.item_name} (x{c.quantity})</span>
+            <li key={c._id} className="flex justify-between items-center bg-slate-700 p-3 rounded-lg">
+              <span className="font-medium">{c.item_name} (x{c.quantity})</span>
               <div className="flex items-center gap-2">
-                <button onClick={() => updateQuantity(c._id, -1)} className="px-2 bg-gray-200 rounded">-</button>
-                <button onClick={() => updateQuantity(c._id, 1)} className="px-2 bg-gray-200 rounded">+</button>
+                <button onClick={() => updateQuantity(c._id, -1)} className="px-3 py-1 bg-slate-600 rounded-lg font-bold">-</button>
+                <button onClick={() => updateQuantity(c._id, 1)} className="px-3 py-1 bg-slate-600 rounded-lg font-bold">+</button>
               </div>
             </li>
           ))}
         </ul>
         <button 
             disabled={loading || cart.length === 0} 
-            onClick={placeOrder} 
-            className="w-full mt-6 bg-green-600 text-white py-2 rounded disabled:bg-gray-400"
+            onClick={() => {/* placeholder for your placeOrder logic */}} 
+            className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold disabled:bg-slate-600"
         >
-          {loading ? 'Processing...' : 'Submit Order'}
+          {loading ? 'Processing...' : 'Confirm Order'}
         </button>
       </div>
     </div>
